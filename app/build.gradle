@@ -4,14 +4,14 @@ plugins {
 }
 
 android {
-    compileSdk 35
+    compileSdk 36  // ✅ UPDATED: Android 16 (API 36)
 
     defaultConfig {
         applicationId "virtual.camera.app"
-        minSdkVersion 23
-        targetSdkVersion 35
-        versionCode 3500
-        versionName "3.5.0"
+        minSdkVersion 23  // Works on Android 6.0+
+        targetSdkVersion 36  // ✅ UPDATED: Target Android 16
+        versionCode 3600
+        versionName "3.6.0"
 
         ndk {
             abiFilters 'armeabi-v7a', 'arm64-v8a'
@@ -54,47 +54,46 @@ android {
 }
 
 dependencies {
-    // Kotlin
+    // Kotlin - The programming language
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-    implementation 'androidx.core:core-ktx:1.13.1'
+    implementation 'androidx.core:core-ktx:1.15.0'  // ✅ UPDATED
 
-    // AndroidX & Material 3
+    // UI Components - How the app looks
     implementation 'com.google.android.material:material:1.12.0'
     implementation 'androidx.appcompat:appcompat:1.7.0'
-    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'androidx.constraintlayout:constraintlayout:2.2.0'  // ✅ UPDATED
     implementation 'androidx.recyclerview:recyclerview:1.3.2'
     implementation 'androidx.viewpager2:viewpager2:1.1.0'
-    implementation 'androidx.activity:activity-ktx:1.9.0'
-    implementation 'androidx.fragment:fragment-ktx:1.7.1'
+    implementation 'androidx.activity:activity-ktx:1.9.3'  // ✅ UPDATED
+    implementation 'androidx.fragment:fragment-ktx:1.8.5'  // ✅ UPDATED
     implementation 'androidx.preference:preference-ktx:1.2.1'
-    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.0'
-    implementation 'androidx.lifecycle:lifecycle-livedata-ktx:2.8.0'
-    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.8.0'
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7'  // ✅ UPDATED
+    implementation 'androidx.lifecycle:lifecycle-livedata-ktx:2.8.7'  // ✅ UPDATED
+    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.8.7'  // ✅ UPDATED
 
-    // Coroutines
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1"
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1"
+    // Coroutines - Makes the app smooth (runs tasks in background)
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0"  // ✅ UPDATED
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0"  // ✅ UPDATED
 
-    // ✅ FIXED: ExoPlayer → Media3 (the correct modern libraries)
-    def media3_version = "1.4.1"
+    // Media3 - Plays videos (HLS, RTSP, HTTP)
+    def media3_version = "1.5.0"  // ✅ UPDATED: Latest stable version
     implementation "androidx.media3:media3-exoplayer:$media3_version"
-    implementation "androidx.media3:media3-exoplayer-hls:$media3_version"
-    implementation "androidx.media3:media3-exoplayer-rtsp:$media3_version"
+    implementation "androidx.media3:media3-exoplayer-hls:$media3_version"  // For HLS streams
+    implementation "androidx.media3:media3-exoplayer-rtsp:$media3_version"  // For RTSP streams
+    implementation "androidx.media3:media3-ui:$media3_version"  // Video player UI
 
-    // UI Components
+    // UI Helpers
     implementation 'com.github.CymChad:BaseRecyclerViewAdapterHelper:3.0.11'
     implementation 'com.afollestad.material-dialogs:core:3.3.0'
     implementation 'com.afollestad.material-dialogs:input:3.3.0'
-
-    // ✅ REMOVED: Non-existent CornerLabelView dependency
-    // If you need corner labels, consider implementing manually or use:
-    // implementation 'com.github.sherzod0520:CornerLabelView:1.0.2'
-
     implementation 'com.tbuonomo:dotsindicator:5.0'
 
-    // Gson for JSON config
+    // JSON handling - Saves your settings
     implementation 'com.google.code.gson:gson:2.11.0'
 
-    // Camera core module
+    // Glide - Loads images smoothly
+    implementation 'com.github.bumptech.glide:glide:4.16.0'  // ✅ ADDED
+
+    // Camera core module - Your main camera replacement code
     implementation project(':camera-core')
 }

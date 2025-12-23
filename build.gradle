@@ -1,31 +1,23 @@
-// Top-level build file
 buildscript {
-    ext.kotlin_version = "1.9.24"
-
-    // ✅ ADD THIS BACK: repositories for buildscript dependencies
+    ext.kotlin_version = "2.0.21"  // ✅ UPDATED: Latest Kotlin
     repositories {
         google()
         mavenCentral()
     }
-
     dependencies {
-        classpath "com.android.tools.build:gradle:8.7.2"
+        classpath 'com.android.tools.build:gradle:8.7.3'  // ✅ UPDATED
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
 
-// ✅ REMOVE the allprojects block entirely
-// (settings.gradle now handles this)
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+        maven { url 'https://jitpack.io' }  // For external libraries
+    }
+}
 
 task clean(type: Delete) {
     delete rootProject.buildDir
-}
-
-ext {
-    minSdkVersion = 23
-    compileSdkVersion = 35      // ✅ Fixed: Use stable Android 15
-    targetSdkVersion = 35       // ✅ Fixed: Match compileSdk
-    buildToolsVersion = "35.0.0" // ✅ Fixed: Match API level
-    javaVersion = JavaVersion.VERSION_17
-    abiFilters = "armeabi-v7a,arm64-v8a"
 }
