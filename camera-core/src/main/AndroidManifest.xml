@@ -1,13 +1,18 @@
-<?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
+<!-- ✅ REQUIRED: Foreground service types for Android 14+ -->
+<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+<uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
+<uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
+<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
-    <application>
-        <service
-            android:name=".VirtualCameraService"
-            android:enabled="true"
-            android:exported="false"
-            android:foregroundServiceType="mediaProjection" />
-    </application>
-</manifest>
+    <!-- Update application tag with proper service declaration -->
+<application>
+<!-- ... existing activities ... -->
+
+<!-- ✅ FIXED: Virtual Camera Service with proper configuration -->
+<service
+    android:name="virtual.camera.core.service.VirtualCameraService"
+    android:enabled="true"
+    android:exported="false"
+    android:foregroundServiceType="camera|mediaProjection"
+    android:stopWithTask="false" />
+</application>

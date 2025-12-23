@@ -1,18 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:app="http://schemas.android.com/apk/res-auto">
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
     <item
-            android:id="@+id/main_setting"
-            android:title="@string/setting"
-            app:showAsAction="never" />
+        android:id="@+id/toggle_camera"
+        android:title="@string/enable_camera"
+        android:icon="@drawable/ic_camera_off"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/main_setting"
+        android:title="Settings"
+        app:showAsAction="never" />
 
     <item
         android:id="@+id/killApps"
-        android:title="@string/killApps"
+        android:title="Kill All Apps"
         app:showAsAction="never" />
 
     <item
         android:id="@+id/open_source"
-        android:title="@string/open_source"
+        android:title="Open Source"
         app:showAsAction="never" />
 </menu>

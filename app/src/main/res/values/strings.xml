@@ -88,4 +88,11 @@
     <string name="goto_str">Goto</string>
     <string name="cancle">Cancle</string>
     <string name="audio_enable">Audio Enable:</string>
+    <string name="enable_camera">Enable Virtual Camera</string>
+    <string name="disable_camera">Disable Virtual Camera</string>
+    <string name="camera_enabled">Virtual camera enabled</string>
+    <string name="camera_disabled">Virtual camera disabled</string>
+    <string name="done">Done</string>
+    <string name="userRemark">User Nickname</string>
+    <string name="cancel">Cancel</string>
 </resources>

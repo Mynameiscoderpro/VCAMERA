@@ -1,63 +1,54 @@
 package virtual.camera.app.app
 
-import android.annotation.SuppressLint
 import android.app.Application
 import android.content.Context
 import android.content.Intent
+import androidx.core.content.ContextCompat
 import virtual.camera.core.service.VirtualCameraService
 import virtual.camera.core.CameraConfig
 
-/**
- * Main Application class that manages the virtual camera service lifecycle
- */
 class App : Application() {
 
     companion object {
-
-        @SuppressLint("StaticFieldLeak")
         @Volatile
-        private lateinit var mContext: Context
+        private lateinit var instance: App
 
         @JvmStatic
-        fun getContext(): Context = mContext
+        fun getContext(): Context = instance.applicationContext  // ✅ FIXED: Use applicationContext
 
-        /**
-         * Start the virtual camera service if it's enabled in settings
-         */
         @JvmStatic
         fun startVirtualCamera() {
-            val config = CameraConfig.load(mContext)
+            val context = getContext()
+            val config = CameraConfig.load(context)
+
             if (config.methodType != CameraConfig.METHOD_DISABLE) {
-                val intent = Intent(mContext, VirtualCameraService::class.java).apply {
+                val intent = Intent(context, VirtualCameraService::class.java).apply {
                     action = VirtualCameraService.ACTION_START
                     putExtra(VirtualCameraService.EXTRA_CONFIG, config)
                 }
-                mContext.startForegroundService(intent)
+
+                // ✅ FIXED: Check if service is already running
+                if (!VirtualCameraService.isRunning) {
+                    ContextCompat.startForegroundService(context, intent)
+                }
             }
         }
 
-        /**
-         * Stop the virtual camera service
-         */
         @JvmStatic
         fun stopVirtualCamera() {
-            val intent = Intent(mContext, VirtualCameraService::class.java).apply {
+            val context = getContext()
+            val intent = Intent(context, VirtualCameraService::class.java).apply {
                 action = VirtualCameraService.ACTION_STOP
             }
-            mContext.startService(intent)
-        }
-    }
-
-    override fun attachBaseContext(base: Context?) {
-        super.attachBaseContext(base)
-        if (base != null) {
-            mContext = base
+            context.startService(intent)
         }
     }
 
     override fun onCreate() {
         super.onCreate()
-        // Automatically start virtual camera if it was previously enabled
-        startVirtualCamera()
+        instance = this
+
+        // ✅ FIXED: Don't auto-start on app launch
+        // Let user manually enable from MainActivity
     }
 }

@@ -1,15 +1,17 @@
 plugins {
     id 'com.android.library'
     id 'org.jetbrains.kotlin.android'
-    id 'kotlin-parcelize'  // ✅ ADDED: Required for @Parcelize annotation
+    id 'kotlin-parcelize'
 }
 
 android {
-    compileSdk 35
+    compileSdk 36  // ✅ UPDATED: Match app module
+
     namespace 'virtual.camera.core'
 
     defaultConfig {
         minSdk 23
+        targetSdk 36  // ✅ ADDED: Should match compileSdk
         consumerProguardFiles "consumer-rules.pro"
     }
 
@@ -31,11 +33,19 @@ android {
 }
 
 dependencies {
-    implementation 'androidx.core:core-ktx:1.13.1'
+    implementation 'androidx.core:core-ktx:1.15.0'  // ✅ UPDATED
 
-    // ✅ FIXED: ExoPlayer → Media3
-    def media3_version = "1.4.1"
+    // ✅ UPDATED: Media3 to match app module
+    def media3_version = "1.5.0"
     implementation "androidx.media3:media3-exoplayer:$media3_version"
     implementation "androidx.media3:media3-exoplayer-hls:$media3_version"
     implementation "androidx.media3:media3-exoplayer-rtsp:$media3_version"
+    implementation "androidx.media3:media3-ui:$media3_version"  // ✅ ADDED
+
+    // ✅ ADDED: Gson for CameraConfig serialization
+    implementation 'com.google.code.gson:gson:2.11.0'
+
+    // ✅ ADDED: Coroutines for async operations
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0"
 }

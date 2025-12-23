@@ -131,14 +131,6 @@ class MainActivity : LoadingActivity() {
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.menu_main, menu)
-
-        // ✅ FIXED: Check if menu item exists before adding
-        if (menu != null) {
-            val toggleItem = menu.add(0, R.id.toggle_camera, 0, "Enable Camera")
-            toggleItem.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM)
-            toggleItem.setIcon(android.R.drawable.ic_menu_camera)
-        }
-
         return true
     }
 
@@ -150,14 +142,14 @@ class MainActivity : LoadingActivity() {
             }
             R.id.killApps -> {
                 AppUtil.killAllApps()
-                ToastUtils.showToast("Done.")
+                ToastUtils.showToast(getString(R.string.done))
                 return true
             }
             R.id.open_source -> {
                 DialogUtil.showDialog(this, false)
                 return true
             }
-            R.id.toggle_camera -> {
+            R.id.toggle_camera -> {  // ✅ This should exist in menu_main.xml
                 toggleVirtualCamera(item)
                 return true
             }
@@ -165,29 +157,22 @@ class MainActivity : LoadingActivity() {
         return super.onOptionsItemSelected(item)
     }
 
-    companion object {
-        fun start(context: Context) {
-            val intent = Intent(context, MainActivity::class.java)
-            context.startActivity(intent)
-        }
-    }
-
-    /**
-     * Toggle virtual camera on/off from the menu
-     */
     private fun toggleVirtualCamera(menuItem: MenuItem) {
-        val isEnabled = VirtualCameraService.isRunning
+        val sharedPrefs = getSharedPreferences("vcamera_prefs", Context.MODE_PRIVATE)
+        val isEnabled = sharedPrefs.getBoolean("camera_enabled", false)
 
         if (isEnabled) {
             App.stopVirtualCamera()
-            menuItem.title = "Enable Camera"
-            menuItem.setIcon(android.R.drawable.ic_menu_camera)
-            ToastUtils.showToast("Virtual camera disabled")
+            sharedPrefs.edit().putBoolean("camera_enabled", false).apply()
+            menuItem.title = getString(R.string.enable_camera)
+            menuItem.setIcon(R.drawable.ic_camera_off)
+            ToastUtils.showToast(getString(R.string.camera_disabled))
         } else {
             App.startVirtualCamera()
-            menuItem.title = "Disable Camera"
-            menuItem.setIcon(android.R.drawable.ic_menu_close_clear_cancel)
-            ToastUtils.showToast("Virtual camera enabled")
+            sharedPrefs.edit().putBoolean("camera_enabled", true).apply()
+            menuItem.title = getString(R.string.disable_camera)
+            menuItem.setIcon(R.drawable.ic_camera_on)
+            ToastUtils.showToast(getString(R.string.camera_enabled))
         }
     }
 }
