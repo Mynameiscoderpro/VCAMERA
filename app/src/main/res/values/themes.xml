@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme -->
+    <style name="Theme.VCamera" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Primary brand color -->
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorPrimaryDark">@color/primary_dark</item>
+        <item name="colorAccent">@color/accent</item>
+
+        <!-- ✅ REMOVED: android:dynamicColorThemeOverlay (not available in API 35) -->
+
+        <!-- Status bar -->
+        <item name="android:statusBarColor">@color/primary</item>
+        <item name="android:windowLightStatusBar">false</item>
+
+        <!-- Navigation bar -->
+        <item name="android:navigationBarColor">@color/background</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">true</item>
+    </style>
+
+    <!-- Welcome screen theme -->
+    <style name="WelcomeTheme" parent="Theme.VCamera">
+        <item name="android:windowBackground">@color/white</item>
+    </style>
+
+    <!-- ✅ FIXED: Translucent theme using Material3 parent -->
+    <style name="Theme.VCamera.Translucent" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Inherit primary colors from base theme -->
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorPrimaryDark">@color/primary_dark</item>
+        <item name="colorAccent">@color/accent</item>
+
+        <!-- Make window translucent -->
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowNoTitle">true</item>
+    </style>
+
+    <!-- Toolbar theme -->
+    <style name="ToolBarColorStyle" parent="ThemeOverlay.Material3.Toolbar.Surface">
+        <item name="android:background">@color/primary</item>
+        <item name="titleTextColor">@color/white</item>
+    </style>
+
+    <!-- Dialog theme -->
+    <style name="VCameraDialog" parent="Theme.MaterialComponents.Dialog.Alert">
+        <item name="android:textColor">@color/primary_text</item>
+        <item name="android:textColorPrimary">@color/primary</item>
+    </style>
+</resources>
