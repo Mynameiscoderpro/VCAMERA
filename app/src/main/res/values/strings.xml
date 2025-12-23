@@ -20,7 +20,7 @@
     <string name="hider">Hide</string>
     <string name="hide_root">Hide Root</string>
     <string name="hide_xposed">Hide Xposed</string>
-    <string name="userRemark">User Remark</string>
+    <string name="userRemark">User Nickname</string>
     <string name="done">Done</string>
     <string name="cancel">Cancel</string>
     <string name="permission_setting">Setting</string>
@@ -62,9 +62,7 @@
     <string name="disable_gms_hint">Clear the current Google service environment? Google service data will be cleared.</string>
     <string name="no_gms">Currently, there is no Google service environment on mobile phones.</string>
 
-
-
-
+    <!-- VCamera Specific Strings -->
     <string name="app_name">VCamera</string>
     <string name="app_name_all">Virtual Camera</string>
     <string name="app_desc">Protect Your Camera Privacy.</string>
@@ -92,7 +90,4 @@
     <string name="disable_camera">Disable Virtual Camera</string>
     <string name="camera_enabled">Virtual camera enabled</string>
     <string name="camera_disabled">Virtual camera disabled</string>
-    <string name="done">Done</string>
-    <string name="userRemark">User Nickname</string>
-    <string name="cancel">Cancel</string>
 </resources>
