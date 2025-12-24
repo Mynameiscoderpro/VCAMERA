@@ -175,7 +175,7 @@ class AppsRepository {
             scanUser()
             resultLiveData.postValue(getString(R.string.uninstall_success))
         } catch (e: Exception) {
-            resultLiveData.postValue(getString(R.string.uninstall_fail, e.message))
+            resultLiveData.postValue(getString(R.string.uninstall_fail, e.message ?: "Unknown error"))
         }
     }
 
