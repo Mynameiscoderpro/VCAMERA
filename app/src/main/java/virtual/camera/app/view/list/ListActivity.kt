@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.view.Menu
-import android.view.MenuItem
 import android.view.View
 import android.view.inputmethod.InputMethodManager
 import androidx.activity.result.contract.ActivityResultContracts
@@ -68,9 +67,9 @@ class ListActivity : BaseActivity() {
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.menu_list, menu)
 
-        // SearchView setup (requires menu_search in menu_list.xml)
-        // TODO: Add search functionality if needed
-
+        // ✅ FIXED: Setup SearchView only if menu_search exists
+        val searchItem = menu?.findItem(R.id.menu_search)
+        val searchView = searchItem?.actionView as? SearchView
 
         searchView?.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean = true
@@ -106,12 +105,12 @@ class ListActivity : BaseActivity() {
         }
 
         viewModel.loadingLiveData.observe(this) { isLoading ->
-            // ✅ FIXED: Use simple View visibility
+            // ✅ FIXED: Use simple View visibility instead of StateView
             if (isLoading) {
-                viewBinding.stateView.visibility = View.VISIBLE
+                viewBinding.loadingView?.visibility = View.VISIBLE
                 viewBinding.recyclerView.visibility = View.GONE
             } else {
-                viewBinding.stateView.visibility = View.GONE
+                viewBinding.loadingView?.visibility = View.GONE
                 viewBinding.recyclerView.visibility = View.VISIBLE
             }
         }
@@ -122,9 +121,9 @@ class ListActivity : BaseActivity() {
                 mAdapter.setItems(it)
                 if (it.isNotEmpty()) {
                     viewBinding.recyclerView.visibility = View.VISIBLE
-                    viewBinding.stateView.visibility = View.GONE
+                    viewBinding.loadingView?.visibility = View.GONE
                 } else {
-                    viewBinding.stateView.visibility = View.VISIBLE
+                    viewBinding.loadingView?.visibility = View.VISIBLE
                     viewBinding.recyclerView.visibility = View.GONE
                 }
             }
