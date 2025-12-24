@@ -5,7 +5,6 @@
     <item
         android:id="@+id/toggle_camera"
         android:title="@string/enable_camera"
-        android:icon="@drawable/ic_camera_off"
         app:showAsAction="ifRoom" />
 
     <item
