@@ -6,6 +6,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
 import android.view.inputmethod.InputMethodManager
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.widget.SearchView
@@ -18,11 +19,6 @@ import virtual.camera.app.util.InjectionUtil
 import virtual.camera.app.util.inflate
 import virtual.camera.app.view.base.BaseActivity
 
-/**
- * Fixed: Replaced SimpleSearchView with standard SearchView
- * Replaced RVAdapter with standard RecyclerView.Adapter
- * Replaced StateView with simple View visibility
- */
 class ListActivity : BaseActivity() {
 
     private val viewBinding: ActivityListBinding by inflate()
@@ -42,17 +38,6 @@ class ListActivity : BaseActivity() {
 
         viewBinding.recyclerView.layoutManager = LinearLayoutManager(this)
         viewBinding.recyclerView.adapter = mAdapter
-
-        // ✅ FIXED: Use standard SearchView
-        val searchView = findViewById<SearchView>(R.id.searchView)
-        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-            override fun onQueryTextSubmit(query: String?): Boolean = true
-
-            override fun onQueryTextChange(newText: String?): Boolean {
-                filterApp(newText ?: "")
-                return true
-            }
-        })
 
         initViewModel()
     }
@@ -80,12 +65,22 @@ class ListActivity : BaseActivity() {
         finish()
     }
 
-    override fun onBackPressed() {
-        super.onBackPressed()
-    }
-
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.menu_list, menu)
+
+        // ✅ FIXED: Setup SearchView properly
+        val searchItem = menu?.findItem(R.id.menu_search)
+        val searchView = searchItem?.actionView as? SearchView
+
+        searchView?.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean = true
+
+            override fun onQueryTextChange(newText: String?): Boolean {
+                filterApp(newText ?: "")
+                return true
+            }
+        })
+
         return true
     }
 
@@ -110,10 +105,15 @@ class ListActivity : BaseActivity() {
             viewBinding.toolbarLayout.toolbar.setTitle(R.string.installed_app)
         }
 
-        viewModel.loadingLiveData.observe(this) {
+        viewModel.loadingLiveData.observe(this) { isLoading ->
             // ✅ FIXED: Use simple View visibility
-            viewBinding.stateView.visibility = if (it) View.VISIBLE else View.GONE
-            viewBinding.recyclerView.visibility = if (it) View.GONE else View.VISIBLE
+            if (isLoading) {
+                viewBinding.stateView.visibility = View.VISIBLE
+                viewBinding.recyclerView.visibility = View.GONE
+            } else {
+                viewBinding.stateView.visibility = View.GONE
+                viewBinding.recyclerView.visibility = View.VISIBLE
+            }
         }
 
         viewModel.appsLiveData.observe(this) {
