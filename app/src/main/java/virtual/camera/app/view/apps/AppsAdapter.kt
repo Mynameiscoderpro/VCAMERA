@@ -9,12 +9,11 @@ import androidx.recyclerview.widget.RecyclerView
 import virtual.camera.app.R
 import virtual.camera.app.bean.AppInfo
 
-/**
- * Fixed: Replaced RVAdapter with standard RecyclerView.Adapter
- */
 class AppsAdapter : RecyclerView.Adapter<AppsAdapter.AppsVH>() {
 
     private val items = mutableListOf<AppInfo>()
+    private var onItemClickListener: ((AppInfo) -> Unit)? = null
+    private var onItemLongClickListener: ((View, AppInfo) -> Unit)? = null
 
     fun setItems(newItems: List<AppInfo>) {
         items.clear()
@@ -22,7 +21,15 @@ class AppsAdapter : RecyclerView.Adapter<AppsAdapter.AppsVH>() {
         notifyDataSetChanged()
     }
 
-    fun getItems(): List<AppInfo> = items
+    fun getItems(): MutableList<AppInfo> = items
+
+    fun setOnItemClickListener(listener: (AppInfo) -> Unit) {
+        onItemClickListener = listener
+    }
+
+    fun setOnItemLongClickListener(listener: (View, AppInfo) -> Unit) {
+        onItemLongClickListener = listener
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AppsVH {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.item_app, parent, false)
@@ -42,6 +49,15 @@ class AppsAdapter : RecyclerView.Adapter<AppsAdapter.AppsVH>() {
         fun bind(item: AppInfo) {
             icon.setImageDrawable(item.icon)
             name.text = item.name
+
+            itemView.setOnClickListener {
+                onItemClickListener?.invoke(item)
+            }
+
+            itemView.setOnLongClickListener {
+                onItemLongClickListener?.invoke(it, item)
+                true
+            }
         }
     }
 }

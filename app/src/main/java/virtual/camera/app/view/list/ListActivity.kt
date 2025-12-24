@@ -68,9 +68,9 @@ class ListActivity : BaseActivity() {
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.menu_list, menu)
 
-        // ✅ FIXED: Setup SearchView properly
-        val searchItem = menu?.findItem(R.id.menu_search)
-        val searchView = searchItem?.actionView as? SearchView
+        // SearchView setup (requires menu_search in menu_list.xml)
+        // TODO: Add search functionality if needed
+
 
         searchView?.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean = true
