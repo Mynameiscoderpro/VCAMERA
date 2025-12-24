@@ -1,5 +1,6 @@
 package virtual.camera.app.view.apps
 
+import android.content.Context
 import android.graphics.Point
 import android.os.Bundle
 import android.text.TextUtils
@@ -7,6 +8,7 @@ import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.appcompat.widget.PopupMenu
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
@@ -24,10 +26,6 @@ import virtual.camera.app.view.main.MainActivity
 import java.util.*
 import kotlin.math.abs
 
-/**
- * Fixed: Removed StateView library usage, replaced with simple View visibility
- * Removed HackApi references and RVAdapter
- */
 class AppsFragment : Fragment() {
 
     var userID: Int = 0
@@ -49,11 +47,10 @@ class AppsFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        // Use simple View instead of StateView
         viewBinding.apply {
             loadingView.visibility = View.GONE
             emptyView.visibility = View.VISIBLE
-            contentView.visibility = View.GONE
+            recyclerView.visibility = View.GONE
         }
 
         mAdapter = AppsAdapter()
@@ -68,7 +65,6 @@ class AppsFragment : Fragment() {
         val itemTouchHelper = ItemTouchHelper(touchCallBack)
         itemTouchHelper.attachToRecyclerView(viewBinding.recyclerView)
 
-        // Set click listener
         mAdapter.setOnItemClickListener { item ->
             showLoading()
             viewModel.launchApk(item.packageName, userID)
@@ -89,9 +85,6 @@ class AppsFragment : Fragment() {
         viewModel.getInstalledApps(userID)
     }
 
-    /**
-     * Drag optimization
-     */
     private fun interceptTouch() {
         val point = Point()
         viewBinding.recyclerView.setOnTouchListener { v, e ->
@@ -160,7 +153,7 @@ class AppsFragment : Fragment() {
                     when (item.itemId) {
                         R.id.app_remove -> {
                             if (data.isXpModule) {
-                                ToastUtils.showToast(R.string.uninstall_module_toast)
+                                showToast(getString(R.string.uninstall_module_toast))
                             } else {
                                 unInstallApk(data)
                             }
@@ -179,15 +172,14 @@ class AppsFragment : Fragment() {
         viewModel.appsLiveData.observe(viewLifecycleOwner) {
             if (it != null) {
                 mAdapter.setItems(it)
-                // Use simple View visibility instead of StateView
                 viewBinding.apply {
                     loadingView.visibility = View.GONE
                     if (it.isEmpty()) {
                         emptyView.visibility = View.VISIBLE
-                        contentView.visibility = View.GONE
+                        recyclerView.visibility = View.GONE
                     } else {
                         emptyView.visibility = View.GONE
-                        contentView.visibility = View.VISIBLE
+                        recyclerView.visibility = View.VISIBLE
                     }
                 }
             }
@@ -196,7 +188,7 @@ class AppsFragment : Fragment() {
         viewModel.resultLiveData.observe(viewLifecycleOwner) {
             if (!TextUtils.isEmpty(it)) {
                 hideLoading()
-                requireContext().toast(it)
+                showToast(it)
                 viewModel.getInstalledApps(userID)
                 scanUser()
             }
@@ -206,7 +198,7 @@ class AppsFragment : Fragment() {
             it?.run {
                 hideLoading()
                 if (!it) {
-                    ToastUtils.showToast(R.string.start_fail)
+                    showToast(getString(R.string.start_fail))
                 }
             }
         }
@@ -253,6 +245,10 @@ class AppsFragment : Fragment() {
         (requireActivity() as? LoadingActivity)?.hideLoading()
     }
 
+    private fun showToast(message: String) {
+        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+    }
+
     companion object {
         fun newInstance(userID: Int): AppsFragment {
             val fragment = AppsFragment()
@@ -263,17 +259,8 @@ class AppsFragment : Fragment() {
     }
 }
 
-// Extensions for click listeners
-fun AppsAdapter.setOnItemClickListener(listener: (AppInfo) -> Unit) {
-    // Implementation in ViewHolder
-}
-
-fun AppsAdapter.setOnItemLongClickListener(listener: (View, AppInfo) -> Unit) {
-    // Implementation in ViewHolder
-}
-
-// Simple touch callback
-class AppsTouchCallBack(private val onMove: (Int, Int) -> Unit) : ItemTouchHelper.Callback() {
+// Touch callback for drag and drop
+class AppsTouchCallBack(private val onMoveBlock: (Int, Int) -> Unit) : ItemTouchHelper.Callback() {
     override fun getMovementFlags(
         recyclerView: RecyclerView,
         viewHolder: RecyclerView.ViewHolder
@@ -289,7 +276,7 @@ class AppsTouchCallBack(private val onMove: (Int, Int) -> Unit) : ItemTouchHelpe
         viewHolder: RecyclerView.ViewHolder,
         target: RecyclerView.ViewHolder
     ): Boolean {
-        onMove(viewHolder.adapterPosition, target.adapterPosition)
+        onMoveBlock(viewHolder.adapterPosition, target.adapterPosition)
         return true
     }
 
