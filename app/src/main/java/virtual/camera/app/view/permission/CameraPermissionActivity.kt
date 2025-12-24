@@ -3,8 +3,10 @@ package virtual.camera.app.view.permission
 import android.app.Activity
 import android.content.Intent
 import android.media.projection.MediaProjectionManager
+import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import virtual.camera.core.service.VirtualCameraService
 import virtual.camera.core.CameraConfig
@@ -15,37 +17,40 @@ import virtual.camera.core.CameraConfig
  */
 class CameraPermissionActivity : AppCompatActivity() {
 
-    private val REQUEST_MEDIA_PROJECTION = 1001
+    // ✅ FIXED: Use modern Activity Result API
+    private val mediaProjectionLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK && result.data != null) {
+            // Start service with permission result
+            val config = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                intent.getParcelableExtra(VirtualCameraService.EXTRA_CONFIG, CameraConfig::class.java)
+            } else {
+                @Suppress("DEPRECATION")
+                intent.getParcelableExtra(VirtualCameraService.EXTRA_CONFIG)
+            } ?: CameraConfig.load(this)
+
+            val serviceIntent = Intent(this, VirtualCameraService::class.java).apply {
+                action = VirtualCameraService.ACTION_START
+                putExtra(VirtualCameraService.EXTRA_CONFIG, config)
+                putExtra("media_projection_data", result.data)
+            }
+            startForegroundService(serviceIntent)
+        } else {
+            Toast.makeText(
+                this,
+                "Camera permission denied. Virtual camera cannot start.",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+        finish()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val config = intent.getParcelableExtra<CameraConfig>(VirtualCameraService.EXTRA_CONFIG)
-            ?: CameraConfig.load(this)
-
         // Request media projection permission
         val projectionManager = getSystemService(MediaProjectionManager::class.java)
-        startActivityForResult(
-            projectionManager.createScreenCaptureIntent(),
-            REQUEST_MEDIA_PROJECTION
-        )
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-
-        if (requestCode == REQUEST_MEDIA_PROJECTION && resultCode == Activity.RESULT_OK) {
-            // Start service with permission result
-            val serviceIntent = Intent(this, VirtualCameraService::class.java).apply {
-                action = VirtualCameraService.ACTION_START
-                putExtra(VirtualCameraService.EXTRA_CONFIG, intent.getParcelableExtra(VirtualCameraService.EXTRA_CONFIG))
-                putExtra("media_projection_data", data)
-            }
-            startForegroundService(serviceIntent)
-        } else {
-            Toast.makeText(this, "Camera permission denied. Virtual camera cannot start.", Toast.LENGTH_LONG).show()
-        }
-
-        finish()
+        mediaProjectionLauncher.launch(projectionManager.createScreenCaptureIntent())
     }
 }

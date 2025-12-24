@@ -165,4 +165,10 @@ class MainActivity : LoadingActivity() {
             ToastUtils.showToast(getString(R.string.camera_enabled))
         }
     }
+    companion object {
+        fun start(context: Context) {
+            val intent = Intent(context, MainActivity::class.java)
+            context.startActivity(intent)
+        }
+    }
 }
