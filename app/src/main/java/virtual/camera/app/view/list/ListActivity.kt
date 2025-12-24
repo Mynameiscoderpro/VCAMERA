@@ -8,7 +8,6 @@ import android.view.Menu
 import android.view.View
 import android.view.inputmethod.InputMethodManager
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.widget.SearchView
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import virtual.camera.app.R
@@ -66,20 +65,7 @@ class ListActivity : BaseActivity() {
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.menu_list, menu)
-
-        // ✅ FIXED: Setup SearchView only if menu_search exists
-        val searchItem = menu?.findItem(R.id.menu_search)
-        val searchView = searchItem?.actionView as? SearchView
-
-        searchView?.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-            override fun onQueryTextSubmit(query: String?): Boolean = true
-
-            override fun onQueryTextChange(newText: String?): Boolean {
-                filterApp(newText ?: "")
-                return true
-            }
-        })
-
+        // Search functionality removed - menu_search doesn't exist
         return true
     }
 
@@ -104,28 +90,16 @@ class ListActivity : BaseActivity() {
             viewBinding.toolbarLayout.toolbar.setTitle(R.string.installed_app)
         }
 
+        // ✅ FIXED: Simplified without loading view
         viewModel.loadingLiveData.observe(this) { isLoading ->
-            // ✅ FIXED: Use simple View visibility instead of StateView
-            if (isLoading) {
-                viewBinding.loadingView?.visibility = View.VISIBLE
-                viewBinding.recyclerView.visibility = View.GONE
-            } else {
-                viewBinding.loadingView?.visibility = View.GONE
-                viewBinding.recyclerView.visibility = View.VISIBLE
-            }
+            viewBinding.recyclerView.visibility = if (isLoading) View.GONE else View.VISIBLE
         }
 
         viewModel.appsLiveData.observe(this) {
             if (it != null) {
                 this.appList = it
                 mAdapter.setItems(it)
-                if (it.isNotEmpty()) {
-                    viewBinding.recyclerView.visibility = View.VISIBLE
-                    viewBinding.loadingView?.visibility = View.GONE
-                } else {
-                    viewBinding.loadingView?.visibility = View.VISIBLE
-                    viewBinding.recyclerView.visibility = View.GONE
-                }
+                viewBinding.recyclerView.visibility = if (it.isNotEmpty()) View.VISIBLE else View.GONE
             }
         }
     }
