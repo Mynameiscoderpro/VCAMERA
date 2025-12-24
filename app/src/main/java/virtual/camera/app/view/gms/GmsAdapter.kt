@@ -11,18 +11,19 @@ import virtual.camera.app.databinding.ItemGmsBinding
 class GmsAdapter : RVHolderFactory() {
 
     override fun createViewHolder(parent: ViewGroup?, viewType: Int, item: Any): RVHolder<out Any> {
-        return GmsVH(inflate(R.layout.item_gms,parent))
+        return GmsVH(inflate(R.layout.item_gms, parent))  // ✅ FIXED: Added space after comma
     }
 
 
-    class GmsVH(itemView:View):RVHolder<GmsBean>(itemView){
+    class GmsVH(itemView: View) : RVHolder<GmsBean>(itemView) {  // ✅ FIXED: Added space after colon
 
         private val binding = ItemGmsBinding.bind(itemView)
+
         override fun setContent(item: GmsBean, isSelected: Boolean, payload: Any?) {
             binding.tvTitle.text = item.userName
             binding.checkbox.isChecked = item.isInstalledGms
-            binding.checkbox.setOnCheckedChangeListener  { buttonView, _ ->
-                if(buttonView.isPressed){
+            binding.checkbox.setOnCheckedChangeListener { buttonView, _ ->
+                if (buttonView.isPressed) {  // ✅ FIXED: Added space after if
                     binding.root.performClick()
                 }
             }
