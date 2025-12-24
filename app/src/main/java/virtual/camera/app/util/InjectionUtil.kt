@@ -4,7 +4,6 @@ import virtual.camera.app.data.AppsRepository
 import virtual.camera.app.data.GmsRepository
 import virtual.camera.app.data.XpRepository
 import virtual.camera.app.view.apps.AppsFactory
-import virtual.camera.app.view.gms.GmsFactory
 import virtual.camera.app.view.list.ListFactory
 
 /**
