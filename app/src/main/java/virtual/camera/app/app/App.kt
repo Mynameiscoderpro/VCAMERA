@@ -19,21 +19,20 @@ class App : Application() {
         fun getInstance(): App? = instance
 
         /**
-         * Get application context
-         * Returns null if app not initialized yet (during early static initialization)
-         * This prevents crashes when classes are loaded before onCreate()
+         * Get application context (non-null)
+         * Safe to call after attachBaseContext
          */
         @JvmStatic
-        fun getContext(): Context? {
-            val ctx = instance?.applicationContext
-            if (ctx == null) {
-                Log.w(TAG, "getContext() called before App.onCreate() - returning null")
-            }
-            return ctx
+        fun getContext(): Context {
+            return instance?.applicationContext
+                ?: throw IllegalStateException("App not initialized - getContext() called too early")
         }
     }
 
     override fun attachBaseContext(base: Context?) {
+        // ✅ CRITICAL FIX: Set instance FIRST, before super call
+        instance = this
+
         try {
             super.attachBaseContext(base)
             Log.d(TAG, "Base context attached successfully")
@@ -55,7 +54,6 @@ class App : Application() {
         try {
             super.onCreate()
             initialized = true
-            instance = this
 
             Log.d(TAG, "=== VCamera App Starting ===")
 
