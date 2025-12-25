@@ -1,93 +1,93 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="choose">Choose</string>
-    <string name="choose_app">Choose App</string>
-    <string name="installed_app">Installed App</string>
-    <string name="installed_module">Installed Module</string>
-    <string name="empty_empty">Empty</string>
-    <string name="filter">Filter</string>
-    <string name="open_source_path">Open Source</string>
-    <string name="xp_setting">Xposed Setting</string>
-    <string name="tg_group">Telegram Group</string>
-    <string name="fake_location">Fake Location(Preview)</string>
-    <string name="real_location">Real Location</string>
-    <string name="close_fake_location">Disable FakeLocation</string>
-    <string name="close_app_fake_location">Disable FakeLocation for %s</string>
-    <string name="close_fake_location_success">Disable FakeLocation for %s Successfully</string>
-    <string name="jump_module">Go to Module Manager</string>
-    <string name="module_setting">Module Manager</string>
-    <string name="enable_xposed">Enable Xposed Framework</string>
-    <string name="hider">Hide</string>
-    <string name="hide_root">Hide Root</string>
-    <string name="hide_xposed">Hide Xposed</string>
-    <string name="userRemark">User Nickname</string>
-    <string name="done">Done</string>
-    <string name="cancel">Cancel</string>
-    <string name="permission_setting">Setting</string>
-    <string name="no_reminders">No Reminders</string>
-    <string name="app_stop">Stop Running</string>
-    <string name="app_stop_hint">Do you want to stop %s forcibly?</string>
-    <string name="is_stop">%s is Stopped</string>
-    <string name="app_clear">Clear Data</string>
-    <string name="app_clear_hint">Clear Data for %s?</string>
-    <string name="app_remove">Uninstall App</string>
-    <string name="app_shortcut">Create Shortcut</string>
-    <string name="shortcut_name">Shortcut Name</string>
-    <string name="try_add_shortcut">Try Added To Desktop</string>
-    <string name="add_shortcut_fail_msg">If the addition fails, please go to system settings and open the permission of "create desktop shortcut" for VCamera</string>
-    <string name="install_success">Installed Successfully</string>
-    <string name="install_fail">Installed Failed: %s</string>
-    <string name="install_fail_no_msg">Installed Failed</string>
-    <string name="uninstall_success">Uninstalled Successfully</string>
-    <string name="uninstall_fail">Uninstalled Failed</string>
-    <string name="uninstall_app">Uninstall App</string>
-    <string name="clear_fail">Clear Failed: %s</string>
-    <string name="uninstall_app_hint">Uninstall %s, and relevant data will be cleared after uninstallation?</string>
-    <string name="uninstall_module">Uninstall Module</string>
-    <string name="uninstall_module_hint">Do you want to uninstall this module? It will no longer work after uninstallation?</string>
-    <string name="remove_success">Removed Successfully</string>
-    <string name="clear_success">Cleared Successfully</string>
-    <string name="start_fail">Launched Failed</string>
-    <string name="start_in_outside">Start module in outside</string>
-    <string name="restart_module">Restart app to apply change</string>
-    <string name="cannot_create_shortcut">This desktop does not support creating shortcuts</string>
-    <string name="uninstall_module_toast">Please uninstall the xposed module in the Module Manager</string>
-    <string name="other">Others</string>
-    <string name="daemon_enable">Daemon</string>
-    <string name="gms_manager">GMS Manager</string>
-    <string name="jump_gms">Go to Gms Manager</string>
-    <string name="enable_gms">Enable Service</string>
-    <string name="enable_gms_hint">Opening Google services can make youtube and other software that strongly rely on Google play services run normally.</string>
-    <string name="disable_gms">Disable Service</string>
-    <string name="disable_gms_hint">Clear the current Google service environment? Google service data will be cleared.</string>
-    <string name="no_gms">Currently, there is no Google service environment on mobile phones.</string>
+    <!-- App Name -->
+    <string name="app_name">Virtual Camera</string>
 
-    <!-- VCamera Specific Strings -->
-    <string name="app_name">VCamera</string>
-    <string name="app_name_all">Virtual Camera</string>
-    <string name="app_desc">Protect Your Camera Privacy.</string>
-    <string name="protect_method">Choose Protect Method</string>
-    <string name="protect_method_disable_camera">1. Disable</string>
-    <string name="protect_method_local">2. Use Local Video</string>
-    <string name="protect_method_network">3. Use Network Video Stream</string>
-    <string name="protect_tip_none">Tips: Please choose a protection method.</string>
-    <string name="protect_tip_disable">Tips: This will disable the virtual camera.</string>
-    <string name="protect_tip_local">Tips: This will replace the camera data with a local video.</string>
-    <string name="protect_tip_network">Tips: This will replace the camera data with a network video.</string>
-    <string name="protect_path_hint">Input video url</string>
+    <!-- Tabs -->
+    <string name="tab_apps">Apps</string>
+    <string name="tab_camera">Camera</string>
+    <string name="tab_settings">Settings</string>
+
+    <!-- Apps Fragment -->
+    <string name="no_apps_installed">No apps installed</string>
+    <string name="install_apps">Install Apps</string>
+    <string name="launch">Launch</string>
+    <string name="clear_data">Clear Data</string>
+    <string name="uninstall">Uninstall</string>
+    <string name="clear_data_confirm">Are you sure you want to clear data for %s?</string>
+    <string name="uninstall_confirm">Are you sure you want to uninstall %s?</string>
+    <string name="failed_to_launch_app">Failed to launch app</string>
+    <string name="app_icon">App Icon</string>
+
+    <!-- Install Apps Activity -->
+    <string name="no_apps_available">No apps available</string>
+    <string name="install">Install</string>
+    <string name="installed">Installed</string>
+
+    <!-- Camera Fragment -->
+    <string name="service_status">Service Status</string>
+    <string name="service_running">Running</string>
+    <string name="service_stopped">Stopped</string>
+    <string name="video_source">Video Source</string>
+    <string name="none">None</string>
+    <string name="real_camera">Real Camera</string>
+    <string name="image">Image</string>
+    <string name="local_video">Local Video</string>
+    <string name="network_video">Network Video</string>
+    <string name="network_video_url">Enter Network Video URL</string>
+    <string name="file_selected">File selected</string>
+    <string name="transform_controls">Transform Controls</string>
+    <string name="rotation_value">Rotation: %.0f°</string>
+    <string name="scale_value">Scale: %.2f</string>
+    <string name="brightness_value">Brightness: %.2f</string>
+    <string name="flip_horizontal">Flip Horizontal</string>
+    <string name="flip_vertical">Flip Vertical</string>
+    <string name="reset_transform">Reset Transform</string>
+    <string name="start_camera">Start Camera</string>
+    <string name="stop_camera">Stop Camera</string>
+
+    <!-- Settings Fragment -->
+    <string name="user_remark">User Remark</string>
+    <string name="enter_remark">Enter remark</string>
     <string name="save">Save</string>
-    <string name="choise_video">Choose Local Video</string>
-    <string name="killApps">Kill All Apps</string>
-    <string name="open_source">Github</string>
-    <string name="setting">Virtual Camera Setting</string>
-    <string name="tips">Tips</string>
-    <string name="dialog_github_start">This is an open source project.\nWelcome to Star my project.</string>
-    <string name="never_show">NeverShow</string>
-    <string name="goto_str">Goto</string>
-    <string name="cancle">Cancle</string>
-    <string name="audio_enable">Audio Enable:</string>
-    <string name="enable_camera">Enable Virtual Camera</string>
-    <string name="disable_camera">Disable Virtual Camera</string>
-    <string name="camera_enabled">Virtual camera enabled</string>
-    <string name="camera_disabled">Virtual camera disabled</string>
+    <string name="settings_saved">Settings saved</string>
+    <string name="data_management">Data Management</string>
+    <string name="clear_all_data">Clear All Data</string>
+    <string name="clear_all_data_confirm">Are you sure you want to clear all data? This action cannot be undone.</string>
+    <string name="data_cleared">All data cleared</string>
+    <string name="app_version">App Version</string>
+
+    <!-- Menu -->
+    <string name="action_about">About</string>
+    <string name="action_toggle_camera">Toggle Camera</string>
+
+    <!-- About Dialog -->
+    <string name="about">About</string>
+    <string name="about_message">Virtual Camera App\n\nA powerful virtual camera application that allows you to use custom video sources, images, and transformations as your camera feed.\n\nVersion 1.0.0</string>
+
+    <!-- Permissions -->
+    <string name="permissions_required">Permissions Required</string>
+    <string name="permissions_required_message">This app requires camera and storage permissions to function properly.</string>
+    <string name="grant">Grant</string>
+    <string name="exit">Exit</string>
+
+    <!-- Common -->
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="error">Error</string>
+    <string name="success">Success</string>
+    <string name="loading">Loading…</string>
+
+    <!-- Error Messages -->
+    <string name="error_camera_service">Failed to start camera service</string>
+    <string name="error_permission_denied">Permission denied</string>
+    <string name="error_file_not_found">File not found</string>
+    <string name="error_network">Network error</string>
+
+    <!-- Success Messages -->
+    <string name="app_installed_success">App installed successfully</string>
+    <string name="app_uninstalled_success">App uninstalled successfully</string>
+    <string name="data_cleared_success">Data cleared successfully</string>
 </resources>

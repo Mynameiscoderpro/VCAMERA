@@ -3,22 +3,15 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
-        android:id="@+id/toggle_camera"
-        android:title="@string/enable_camera"
+        android:id="@+id/action_toggle_camera"
+        android:title="@string/start_camera"
+        android:icon="@android:drawable/ic_menu_camera"
         app:showAsAction="ifRoom" />
 
     <item
-        android:id="@+id/main_setting"
-        android:title="Settings"
+        android:id="@+id/action_about"
+        android:title="@string/about"
+        android:icon="@android:drawable/ic_menu_info_details"
         app:showAsAction="never" />
 
-    <item
-        android:id="@+id/killApps"
-        android:title="Kill All Apps"
-        app:showAsAction="never" />
-
-    <item
-        android:id="@+id/open_source"
-        android:title="Open Source"
-        app:showAsAction="never" />
 </menu>

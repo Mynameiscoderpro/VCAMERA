@@ -1,19 +1,46 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Primary brand color -->
-    <color name="primary">#FF3F51B5</color>
-    <color name="primary_dark">#FF303F9F</color>
-    <color name="primary_light">#FFC5CAE9</color>
+    <!-- Primary Colors -->
+    <color name="colorPrimary">#6200EE</color>
+    <color name="colorPrimaryDark">#3700B3</color>
+    <color name="colorAccent">#03DAC5</color>
 
-    <!-- Accent color -->
-    <color name="accent">#FFFF4081</color>
+    <!-- Material Design Colors -->
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
 
-    <!-- Text colors -->
-    <color name="primary_text">#DE000000</color>
-    <color name="secondary_text">#8A000000</color>
+    <!-- Basic Colors -->
+    <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="gray">#FF808080</color>
+    <color name="light_gray">#FFD3D3D3</color>
+    <color name="dark_gray">#FF404040</color>
 
-    <!-- Background -->
-    <color name="background">#FFF5F5F5</color>
-    <color name="white_background">#FFFFFFFF</color>
+    <!-- Background Colors -->
+    <color name="background_light">#FFFAFAFA</color>
+    <color name="background_dark">#FF121212</color>
+    <color name="surface_light">#FFFFFFFF</color>
+    <color name="surface_dark">#FF1E1E1E</color>
+
+    <!-- Text Colors -->
+    <color name="text_primary_light">#DE000000</color>
+    <color name="text_secondary_light">#99000000</color>
+    <color name="text_primary_dark">#FFFFFFFF</color>
+    <color name="text_secondary_dark">#B3FFFFFF</color>
+
+    <!-- Status Colors -->
+    <color name="success">#FF4CAF50</color>
+    <color name="error">#FFF44336</color>
+    <color name="warning">#FFFF9800</color>
+    <color name="info">#FF2196F3</color>
+
+    <!-- Card Colors -->
+    <color name="card_background">#FFFFFFFF</color>
+    <color name="card_background_dark">#FF2C2C2C</color>
+
+    <!-- Divider -->
+    <color name="divider">#1F000000</color>
 </resources>
