@@ -7,8 +7,9 @@ import virtual.camera.app.view.list.ListFactory
 
 object InjectionUtil {
 
-    private val appsRepository = AppsRepository()
-    private val xpRepository = XpRepository()
+    // ✅ FIXED: Use lazy initialization instead of eager initialization
+    private val appsRepository by lazy { AppsRepository() }
+    private val xpRepository by lazy { XpRepository() }
 
     fun getAppsFactory(): AppsFactory {
         return AppsFactory(appsRepository)
