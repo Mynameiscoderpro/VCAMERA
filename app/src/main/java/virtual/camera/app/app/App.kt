@@ -18,11 +18,12 @@ class App : Application() {
         fun getInstance(): App? = instance
 
         /**
-         * Get application context
+         * Get application context (non-null)
          * This method is used throughout the app
          */
-        fun getContext(): Context? {
+        fun getContext(): Context {
             return instance?.applicationContext
+                ?: throw IllegalStateException("App not initialized yet")
         }
     }
 

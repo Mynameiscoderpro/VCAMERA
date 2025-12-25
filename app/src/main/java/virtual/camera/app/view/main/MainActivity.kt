@@ -2,7 +2,9 @@ package virtual.camera.app.view.main
 
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import androidx.activity.result.contract.ActivityResultContracts
@@ -21,6 +23,7 @@ import virtual.camera.app.view.apps.AppsFragment
 import virtual.camera.app.view.base.LoadingActivity
 import virtual.camera.app.view.list.ListActivity
 import virtual.camera.app.view.setting.SettingActivity
+import virtual.camera.core.service.VirtualCameraService
 
 class MainActivity : LoadingActivity() {
 
@@ -148,23 +151,51 @@ class MainActivity : LoadingActivity() {
         return super.onOptionsItemSelected(item)
     }
 
-    // ✅ FIXED: Removed icon changes since we don't have the drawables
+    // ✅ FIXED: Moved methods from App to MainActivity
     private fun toggleVirtualCamera(menuItem: MenuItem) {
         val sharedPrefs = getSharedPreferences("vcamera_prefs", Context.MODE_PRIVATE)
         val isEnabled = sharedPrefs.getBoolean("camera_enabled", false)
 
         if (isEnabled) {
-            App.stopVirtualCamera()
+            stopVirtualCamera()
             sharedPrefs.edit().putBoolean("camera_enabled", false).apply()
             menuItem.title = getString(R.string.enable_camera)
             ToastUtils.showToast(getString(R.string.camera_disabled))
         } else {
-            App.startVirtualCamera()
+            startVirtualCamera()
             sharedPrefs.edit().putBoolean("camera_enabled", true).apply()
             menuItem.title = getString(R.string.disable_camera)
             ToastUtils.showToast(getString(R.string.camera_enabled))
         }
     }
+
+    // ✅ NEW: Start Virtual Camera Service
+    private fun startVirtualCamera() {
+        try {
+            val intent = Intent(this, VirtualCameraService::class.java)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(intent)
+            } else {
+                startService(intent)
+            }
+            Log.d("MainActivity", "Virtual camera service started")
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Error starting virtual camera: ${e.message}", e)
+            ToastUtils.showToast("Failed to start virtual camera")
+        }
+    }
+
+    // ✅ NEW: Stop Virtual Camera Service
+    private fun stopVirtualCamera() {
+        try {
+            val intent = Intent(this, VirtualCameraService::class.java)
+            stopService(intent)
+            Log.d("MainActivity", "Virtual camera service stopped")
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Error stopping virtual camera: ${e.message}", e)
+        }
+    }
+
     companion object {
         fun start(context: Context) {
             val intent = Intent(context, MainActivity::class.java)
