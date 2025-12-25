@@ -7,6 +7,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import virtual.camera.app.data.models.AppInfo
 import virtual.camera.app.data.repository.AppsRepository
@@ -15,21 +16,26 @@ class AppsViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = AppsRepository(application)
 
+    // StateFlow for installed apps
     private val _installedApps = MutableStateFlow<List<AppInfo>>(emptyList())
-    val installedApps: StateFlow<List<AppInfo>> = _installedApps
+    val installedApps: StateFlow<List<AppInfo>> = _installedApps.asStateFlow()
 
+    // Loading states
     private val _isLoading = MutableLiveData<Boolean>(false)
     val isLoading: LiveData<Boolean> = _isLoading
 
     private val _loadingLiveData = MutableLiveData<Boolean>(false)
     val loadingLiveData: LiveData<Boolean> = _loadingLiveData
 
+    // Launch result
     private val _launchLiveData = MutableLiveData<Boolean>()
     val launchLiveData: LiveData<Boolean> = _launchLiveData
 
+    // Operation results
     private val _resultLiveData = MutableLiveData<String?>()
     val resultLiveData: LiveData<String?> = _resultLiveData
 
+    // Available apps
     private val _availableAppsLiveData = MutableLiveData<List<AppInfo>>()
     val availableAppsLiveData: LiveData<List<AppInfo>> = _availableAppsLiveData
 
@@ -37,7 +43,8 @@ class AppsViewModel(application: Application) : AndroidViewModel(application) {
         loadInstalledApps()
     }
 
-    fun getInstalledApps() = installedApps
+    // REMOVED: fun getInstalledApps() - This was causing the conflict
+    // Use the property 'installedApps' directly instead
 
     fun loadInstalledApps() {
         viewModelScope.launch {
