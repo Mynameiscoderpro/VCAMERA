@@ -19,108 +19,67 @@ class App : Application() {
         fun getInstance(): App? = instance
 
         /**
-         * Get application context (non-null)
-         * Safe to call after attachBaseContext
+         * Get application context - SAFE version
+         * Returns application context or throws meaningful error
          */
         @JvmStatic
         fun getContext(): Context {
-            return instance?.applicationContext
-                ?: throw IllegalStateException("App not initialized - getContext() called too early")
+            val app = instance
+            if (app == null) {
+                Log.e(TAG, "CRITICAL: App.getContext() called before Application.onCreate()")
+                Log.e(TAG, "Stack trace:", Exception("Context access before init"))
+                throw IllegalStateException(
+                    "Application not initialized. Make sure App class is declared in AndroidManifest.xml"
+                )
+            }
+            return app.applicationContext
         }
     }
 
     override fun attachBaseContext(base: Context?) {
-        // ✅ CRITICAL FIX: Set instance FIRST, before super call
+        super.attachBaseContext(base)
+        // Set instance as early as possible
         instance = this
-
-        try {
-            super.attachBaseContext(base)
-            Log.d(TAG, "Base context attached successfully")
-        } catch (e: Exception) {
-            Log.e(TAG, "Error in attachBaseContext: ${e.message}", e)
-            // Try to continue despite error
-            try {
-                super.attachBaseContext(base)
-            } catch (e2: Exception) {
-                // Last resort - log and continue
-                Log.e(TAG, "Critical context error", e2)
-            }
-        }
+        Log.d(TAG, "App instance initialized in attachBaseContext")
     }
 
     override fun onCreate() {
-        var initialized = false
+        super.onCreate()
 
-        try {
-            super.onCreate()
-            initialized = true
+        Log.d(TAG, "=== VCamera App Starting ===")
 
-            Log.d(TAG, "=== VCamera App Starting ===")
-
-            // Detect virtual environment by checking package name
-            val packageName = try {
-                applicationContext.packageName
-            } catch (e: Exception) {
-                "unknown"
-            }
-
-            val originalPackage = "virtual.camera.app"
-            val isVirtual = packageName != originalPackage
-
-            Log.d(TAG, "Current Package: $packageName")
-            Log.d(TAG, "Original Package: $originalPackage")
-            Log.d(TAG, "Running in Virtual Environment: $isVirtual")
-
-            if (isVirtual) {
-                Log.d(TAG, "Detected MochiCloner or similar virtual space")
-                Log.d(TAG, "Applying virtual environment optimizations...")
-
-                // Give virtual environment time to fully initialize
-                try {
-                    Thread.sleep(1000) // 1 second delay
-                } catch (e: InterruptedException) {
-                    Log.w(TAG, "Initialization delay interrupted")
-                }
-            }
-
-            // Initialize app components
-            initializeComponents()
-
-            Log.d(TAG, "VCamera initialized successfully!")
-
+        // Detect virtual environment by checking package name
+        val packageName = try {
+            applicationContext.packageName
         } catch (e: Exception) {
-            Log.e(TAG, "Error during app initialization: ${e.message}", e)
-            e.printStackTrace()
+            "unknown"
+        }
 
-            if (!initialized) {
-                // If super.onCreate() failed, we can't continue
-                Log.e(TAG, "CRITICAL: App failed to initialize properly")
-                // Don't throw - let system handle it
+        val originalPackage = "virtual.camera.app"
+        val isVirtual = packageName != originalPackage
+
+        Log.d(TAG, "Current Package: $packageName")
+        Log.d(TAG, "Original Package: $originalPackage")
+        Log.d(TAG, "Running in Virtual Environment: $isVirtual")
+
+        if (isVirtual) {
+            Log.d(TAG, "Detected MochiCloner or similar virtual space")
+            Log.d(TAG, "Applying virtual environment optimizations...")
+
+            // Give virtual environment time to fully initialize
+            try {
+                Thread.sleep(500) // Reduced to 500ms
+            } catch (e: InterruptedException) {
+                Log.w(TAG, "Initialization delay interrupted")
             }
         }
-    }
 
-    private fun initializeComponents() {
-        try {
-            Log.d(TAG, "Initializing app components...")
-
-            // Initialize your components here if needed
-            // For now, just log success
-
-            Log.d(TAG, "Components initialized")
-        } catch (e: Exception) {
-            Log.e(TAG, "Error initializing components: ${e.message}", e)
-            // Don't crash - components can initialize lazily
-        }
+        Log.d(TAG, "VCamera initialized successfully!")
     }
 
     override fun onTerminate() {
-        try {
-            Log.d(TAG, "App terminating")
-            super.onTerminate()
-            instance = null
-        } catch (e: Exception) {
-            Log.e(TAG, "Error during termination: ${e.message}", e)
-        }
+        Log.d(TAG, "App terminating")
+        super.onTerminate()
+        instance = null
     }
 }
