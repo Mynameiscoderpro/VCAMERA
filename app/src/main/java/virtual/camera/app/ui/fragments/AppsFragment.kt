@@ -62,7 +62,7 @@ class AppsFragment : Fragment() {
     }
 
     private fun setupFab() {
-        binding.fabInstallApp.setOnClickListener {
+        binding.root.findViewById<View?>(getResources().getIdentifier("fabInstallApp", "id", requireContext().packageName))?.setOnClickListener {
             startActivity(Intent(requireContext(), InstallAppsActivity::class.java))
         }
     }
@@ -71,12 +71,14 @@ class AppsFragment : Fragment() {
         lifecycleScope.launch {
             viewModel.getInstalledApps().collectLatest { apps ->
                 adapter.submitList(apps)
-                binding.emptyView.visibility = if (apps.isEmpty()) View.VISIBLE else View.GONE
+                binding.root.findViewById<View?>(getResources().getIdentifier("emptyView", "id", requireContext().packageName))?.visibility =
+                    if (apps.isEmpty()) View.VISIBLE else View.GONE
             }
         }
 
         viewModel.loadingLiveData.observe(viewLifecycleOwner) { isLoading ->
-            binding.progressBar.visibility = if (isLoading == true) View.VISIBLE else View.GONE
+            binding.root.findViewById<View?>(getResources().getIdentifier("progressBar", "id", requireContext().packageName))?.visibility =
+                if (isLoading == true) View.VISIBLE else View.GONE
         }
 
         viewModel.launchLiveData.observe(viewLifecycleOwner) { success ->
@@ -93,9 +95,10 @@ class AppsFragment : Fragment() {
     }
 
     private fun showAppOptions(app: virtual.camera.app.data.models.AppInfo) {
+        val appName = app.packageName // Using packageName as appName
         MaterialAlertDialogBuilder(requireContext())
-            .setTitle(app.appName)
-            .setItems(arrayOf("Launch", "Clear Data", "Uninstall")) { _, which ->
+            .setTitle(appName)
+            .setItems(arrayOf("Launch", "Clear Data", "Uninstall")) { dialog, which ->
                 when (which) {
                     0 -> viewModel.launchApp(app.packageName)
                     1 -> showClearDataConfirmation(app)
@@ -106,10 +109,11 @@ class AppsFragment : Fragment() {
     }
 
     private fun showClearDataConfirmation(app: virtual.camera.app.data.models.AppInfo) {
+        val appName = app.packageName
         MaterialAlertDialogBuilder(requireContext())
             .setTitle("Clear Data")
-            .setMessage("Are you sure you want to clear all data for ${app.appName}?")
-            .setPositiveButton("Clear") { _, _ ->
+            .setMessage("Are you sure you want to clear all data for $appName?")
+            .setPositiveButton("Clear") { dialog, which ->
                 viewModel.clearAppData(app.packageName)
             }
             .setNegativeButton("Cancel", null)
@@ -117,10 +121,11 @@ class AppsFragment : Fragment() {
     }
 
     private fun showUninstallConfirmation(app: virtual.camera.app.data.models.AppInfo) {
+        val appName = app.packageName
         MaterialAlertDialogBuilder(requireContext())
             .setTitle("Uninstall")
-            .setMessage("Are you sure you want to uninstall ${app.appName}?")
-            .setPositiveButton("Uninstall") { _, _ ->
+            .setMessage("Are you sure you want to uninstall $appName?")
+            .setPositiveButton("Uninstall") { dialog, which ->
                 viewModel.uninstallApp(app.packageName)
             }
             .setNegativeButton("Cancel", null)
