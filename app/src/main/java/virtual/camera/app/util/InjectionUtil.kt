@@ -1,7 +1,6 @@
 package virtual.camera.app.util
 
 import virtual.camera.app.data.AppsRepository
-import virtual.camera.app.data.XpRepository
 import virtual.camera.app.view.apps.AppsFactory
 import virtual.camera.app.view.list.ListFactory
 
