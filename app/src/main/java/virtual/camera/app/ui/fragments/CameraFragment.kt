@@ -7,26 +7,33 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.SeekBar
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.ViewModelProvider
-import virtual.camera.app.R
+import androidx.fragment.app.viewModels
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import dagger.hilt.android.AndroidEntryPoint
 import virtual.camera.app.databinding.FragmentCameraBinding
-import virtual.camera.app.data.models.CameraConfig
-import virtual.camera.app.data.models.VideoSource
-import virtual.camera.app.data.models.VideoTransform
 import virtual.camera.app.viewmodel.CameraViewModel
 
+@AndroidEntryPoint
 class CameraFragment : Fragment() {
 
     private var _binding: FragmentCameraBinding? = null
     private val binding get() = _binding!!
 
-    private lateinit var viewModel: CameraViewModel
-    private var currentTransform = VideoTransform.DEFAULT
-    private var currentUri: Uri? = null
-    private var currentSource = VideoSource.NONE
+    private val viewModel: CameraViewModel by viewModels()
+    private var selectedVideoPath: String? = null
+
+    private val videoPickerLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            result.data?.data?.let { uri ->
+                handleVideoSelection(uri)
+            }
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -40,222 +47,133 @@ class CameraFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        viewModel = ViewModelProvider(requireActivity())[CameraViewModel::class.java]
-
-        setupSourceSelection()
-        setupTransformControls()
-        setupButtons()
+        setupViews()
         observeViewModel()
     }
 
-    private fun setupSourceSelection() {
-        binding.radioGroupSource.setOnCheckedChangeListener { _, checkedId ->
-            when (checkedId) {
-                R.id.radioRealCamera -> {
-                    currentSource = VideoSource.REAL_CAMERA
-                    showTransformControls(false)
-                }
-                R.id.radioImage -> {
-                    selectImage()
-                }
-                R.id.radioLocalVideo -> {
-                    selectVideo()
-                }
-                R.id.radioNetworkVideo -> {
-                    showNetworkVideoDialog()
-                }
-                R.id.radioNone -> {
-                    currentSource = VideoSource.NONE
-                    showTransformControls(false)
-                }
-            }
-        }
-    }
-
-    private fun setupTransformControls() {
-        // Rotation
-        binding.seekBarRotation.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                val rotation = (progress - 180).toFloat()
-                binding.textRotation.text = getString(R.string.rotation_value, rotation)
-                currentTransform = currentTransform.copy(rotation = rotation)
-            }
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {
-                updateTransform()
-            }
-        })
-
-        // Scale
-        binding.seekBarScale.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                val scale = progress / 100f
-                binding.textScale.text = getString(R.string.scale_value, scale)
-                currentTransform = currentTransform.copy(scaleX = scale, scaleY = scale)
-            }
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {
-                updateTransform()
-            }
-        })
-
-        // Brightness
-        binding.seekBarBrightness.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                val brightness = (progress - 50) / 100f
-                binding.textBrightness.text = getString(R.string.brightness_value, brightness)
-                currentTransform = currentTransform.copy(brightness = brightness)
-            }
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {
-                updateTransform()
-            }
-        })
-
-        // Flip horizontal
-        binding.switchFlipHorizontal.setOnCheckedChangeListener { _, isChecked ->
-            currentTransform = currentTransform.copy(flipHorizontal = isChecked)
-            updateTransform()
+    private fun setupViews() {
+        binding.btnSelectVideo.setOnClickListener {
+            openVideoPicker()
         }
 
-        // Flip vertical
-        binding.switchFlipVertical.setOnCheckedChangeListener { _, isChecked ->
-            currentTransform = currentTransform.copy(flipVertical = isChecked)
-            updateTransform()
-        }
-    }
-
-    private fun setupButtons() {
-        binding.buttonStartCamera.setOnClickListener {
-            startCameraService()
+        binding.btnStartCamera.setOnClickListener {
+            startVirtualCamera()
         }
 
-        binding.buttonStopCamera.setOnClickListener {
-            stopCameraService()
+        binding.btnStopCamera.setOnClickListener {
+            stopVirtualCamera()
         }
 
-        binding.buttonResetTransform.setOnClickListener {
-            resetTransform()
+        binding.btnSettings.setOnClickListener {
+            showSettings()
         }
     }
 
     private fun observeViewModel() {
+        viewModel.cameraEnabled.observe(viewLifecycleOwner) { enabled ->
+            updateCameraState(enabled)
+        }
+
+        viewModel.selectedVideo.observe(viewLifecycleOwner) { videoPath ->
+            selectedVideoPath = videoPath
+            updateVideoDisplay(videoPath)
+        }
+
         viewModel.serviceStatusLiveData.observe(viewLifecycleOwner) { isRunning ->
             updateServiceStatus(isRunning)
         }
 
         viewModel.errorLiveData.observe(viewLifecycleOwner) { error ->
-            showError(error)
+            error?.let {
+                showError(it)
+            }
         }
+    }
+
+    private fun openVideoPicker() {
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "video/*"
+        }
+        videoPickerLauncher.launch(intent)
+    }
+
+    private fun handleVideoSelection(uri: Uri) {
+        val path = getRealPathFromUri(uri)
+        path?.let {
+            selectedVideoPath = it
+            viewModel.setVideoSource(it)
+            binding.txtSelectedVideo.text = "Video: ${uri.lastPathSegment}"
+            binding.btnStartCamera.isEnabled = true
+        } ?: run {
+            showError("Failed to get video path")
+        }
+    }
+
+    private fun getRealPathFromUri(uri: Uri): String? {
+        // Simple implementation - in production, use proper URI to path conversion
+        return uri.path
+    }
+
+    private fun updateVideoDisplay(videoPath: String?) {
+        if (videoPath != null) {
+            binding.txtSelectedVideo.text = "Video: $videoPath"
+            binding.btnStartCamera.isEnabled = true
+        } else {
+            binding.txtSelectedVideo.text = "No video selected"
+            binding.btnStartCamera.isEnabled = false
+        }
+    }
+
+    private fun updateCameraState(enabled: Boolean) {
+        binding.btnStartCamera.isEnabled = !enabled && selectedVideoPath != null
+        binding.btnStopCamera.isEnabled = enabled
+        binding.btnSelectVideo.isEnabled = !enabled
+
+        binding.statusIndicator.setBackgroundColor(
+            if (enabled) {
+                android.graphics.Color.GREEN
+            } else {
+                android.graphics.Color.RED
+            }
+        )
     }
 
     private fun updateServiceStatus(isRunning: Boolean) {
-        binding.textServiceStatus.text = if (isRunning) {
-            getString(R.string.service_running)
+        binding.txtStatus.text = if (isRunning) {
+            "Virtual Camera: Active"
         } else {
-            getString(R.string.service_stopped)
-        }
-
-        binding.buttonStartCamera.isEnabled = !isRunning
-        binding.buttonStopCamera.isEnabled = isRunning
-    }
-
-    private fun showTransformControls(show: Boolean) {
-        binding.layoutTransformControls.visibility = if (show) View.VISIBLE else View.GONE
-    }
-
-    private fun selectImage() {
-        imagePicker.launch("image/*")
-    }
-
-    private fun selectVideo() {
-        videoPicker.launch("video/*")
-    }
-
-    private val imagePicker = registerForActivityResult(
-        ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        uri?.let {
-            currentUri = it
-            currentSource = VideoSource.IMAGE
-            binding.textSelectedFile.text = getString(R.string.file_selected)
-            showTransformControls(true)
+            "Virtual Camera: Inactive"
         }
     }
 
-    private val videoPicker = registerForActivityResult(
-        ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        uri?.let {
-            currentUri = it
-            currentSource = VideoSource.LOCAL_VIDEO
-            binding.textSelectedFile.text = getString(R.string.file_selected)
-            showTransformControls(true)
+    private fun startVirtualCamera() {
+        val videoPath = selectedVideoPath
+        if (videoPath != null) {
+            viewModel.startCameraService(videoPath)
+        } else {
+            showError("Please select a video first")
         }
     }
 
-    private fun showNetworkVideoDialog() {
-        val editText = android.widget.EditText(requireContext())
-        editText.hint = "https://example.com/video.mp4"
+    private fun stopVirtualCamera() {
+        viewModel.stopCameraService()
+    }
 
-        androidx.appcompat.app.AlertDialog.Builder(requireContext())
-            .setTitle(R.string.network_video_url)
-            .setView(editText)
-            .setPositiveButton(R.string.ok) { _, _ ->
-                val url = editText.text.toString()
-                if (url.isNotEmpty()) {
-                    currentUri = Uri.parse(url)
-                    currentSource = VideoSource.NETWORK_VIDEO
-                    binding.textSelectedFile.text = url
-                    showTransformControls(true)
-                }
-            }
-            .setNegativeButton(R.string.cancel, null)
+    private fun showSettings() {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Camera Settings")
+            .setMessage("Settings feature coming soon")
+            .setPositiveButton("OK", null)
             .show()
     }
 
-    private fun startCameraService() {
-        val config = CameraConfig(
-            source = currentSource,
-            sourceUri = currentUri,
-            transform = currentTransform,
-            isEnabled = true
-        )
-        viewModel.startCameraService(requireContext(), config)
-    }
-
-    private fun stopCameraService() {
-        viewModel.stopCameraService(requireContext())
-    }
-
-    private fun updateTransform() {
-        viewModel.setVideoTransform(currentTransform)
-    }
-
-    private fun resetTransform() {
-        currentTransform = VideoTransform.DEFAULT
-        binding.seekBarRotation.progress = 180
-        binding.seekBarScale.progress = 100
-        binding.seekBarBrightness.progress = 50
-        binding.switchFlipHorizontal.isChecked = false
-        binding.switchFlipVertical.isChecked = false
-        updateTransform()
-    }
-
     private fun showError(message: String) {
-        com.google.android.material.snackbar.Snackbar.make(
-            binding.root,
-            message,
-            com.google.android.material.snackbar.Snackbar.LENGTH_LONG
-        ).show()
+        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
-    }
-
-    companion object {
-        fun newInstance() = CameraFragment()
     }
 }

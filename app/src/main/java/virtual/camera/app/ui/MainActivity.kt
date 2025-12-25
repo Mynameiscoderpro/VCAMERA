@@ -1,156 +1,73 @@
 package virtual.camera.app.ui
 
 import android.os.Bundle
-import android.view.Menu
-import android.view.MenuItem
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AlertDialog
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.ViewModelProvider
-import com.google.android.material.tabs.TabLayoutMediator
+import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.ui.setupWithNavController
+import com.google.android.material.bottomnavigation.BottomNavigationView
+import dagger.hilt.android.AndroidEntryPoint
 import virtual.camera.app.R
 import virtual.camera.app.databinding.ActivityMainBinding
-import virtual.camera.app.utils.PermissionHelper
-import virtual.camera.app.viewmodel.AppsViewModel
 import virtual.camera.app.viewmodel.CameraViewModel
 
+@AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
-    private lateinit var appsViewModel: AppsViewModel
-    private lateinit var cameraViewModel: CameraViewModel
-    private lateinit var pagerAdapter: MainPagerAdapter
+    private val cameraViewModel: CameraViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Initialize ViewModels
-        appsViewModel = ViewModelProvider(this)[AppsViewModel::class.java]
-        cameraViewModel = ViewModelProvider(this)[CameraViewModel::class.java]
-
-        // Setup toolbar
-        setSupportActionBar(binding.toolbar)
-        supportActionBar?.apply {
-            title = getString(R.string.app_name)
-            setDisplayShowTitleEnabled(true)
-        }
-
-        // Check permissions
-        if (!PermissionHelper.hasAllPermissions(this)) {
-            requestPermissions()
-        } else {
-            setupViewPager()
-        }
-
-        // Observe service status
-        observeServiceStatus()
+        setupNavigation()
+        observeViewModel()
     }
 
-    private fun setupViewPager() {
-        pagerAdapter = MainPagerAdapter(this)
-        binding.viewPager.adapter = pagerAdapter
+    private fun setupNavigation() {
+        val navHostFragment = supportFragmentManager
+            .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
+        val navController = navHostFragment.navController
 
-        // Connect TabLayout with ViewPager2
-        TabLayoutMediator(binding.tabLayout, binding.viewPager) { tab, position ->
-            tab.text = when (position) {
-                0 -> getString(R.string.tab_apps)
-                1 -> getString(R.string.tab_camera)
-                2 -> getString(R.string.tab_settings)
-                else -> ""
-            }
-        }.attach()
-
-        // Optional: Disable swipe between tabs
-        binding.viewPager.isUserInputEnabled = true
+        val bottomNav = findViewById<BottomNavigationView>(R.id.bottom_navigation)
+        bottomNav?.setupWithNavController(navController)
     }
 
-    private fun observeServiceStatus() {
+    private fun observeViewModel() {
         cameraViewModel.serviceStatusLiveData.observe(this) { isRunning ->
-            invalidateOptionsMenu()
-        }
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        menuInflater.inflate(R.menu.menu_main, menu)
-
-        // Update camera toggle menu item
-        menu?.findItem(R.id.action_toggle_camera)?.apply {
-            val isRunning = cameraViewModel.checkServiceStatus()
-            title = if (isRunning) {
-                getString(R.string.stop_camera)
-            } else {
-                getString(R.string.start_camera)
-            }
+            updateServiceStatus(isRunning)
         }
 
-        return true
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            R.id.action_toggle_camera -> {
-                toggleCameraService()
-                true
+        cameraViewModel.errorLiveData.observe(this) { error ->
+            error?.let {
+                showError(it)
             }
-            R.id.action_about -> {
-                showAboutDialog()
-                true
-            }
-            else -> super.onOptionsItemSelected(item)
         }
     }
 
-    private fun toggleCameraService() {
-        val isRunning = cameraViewModel.checkServiceStatus()
-        if (isRunning) {
-            cameraViewModel.stopCameraService(this)
-        } else {
-            // Switch to camera tab
-            binding.viewPager.currentItem = 1
-        }
+    private fun updateServiceStatus(isRunning: Boolean) {
+        // Update UI to reflect service status
     }
 
-    private fun showAboutDialog() {
-        AlertDialog.Builder(this)
-            .setTitle(R.string.about)
-            .setMessage(R.string.about_message)
-            .setPositiveButton(R.string.ok, null)
-            .show()
+    private fun showError(message: String) {
+        // Show error message
     }
 
-    private fun requestPermissions() {
-        permissionLauncher.launch(PermissionHelper.REQUIRED_PERMISSIONS)
+    override fun onResume() {
+        super.onResume()
+        checkServiceStatus()
     }
 
-    private val permissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        val allGranted = permissions.values.all { it }
-        if (allGranted) {
-            setupViewPager()
-        } else {
-            showPermissionDeniedDialog()
-        }
-    }
-
-    private fun showPermissionDeniedDialog() {
-        AlertDialog.Builder(this)
-            .setTitle(R.string.permissions_required)
-            .setMessage(R.string.permissions_required_message)
-            .setPositiveButton(R.string.grant) { _, _ ->
-                requestPermissions()
-            }
-            .setNegativeButton(R.string.exit) { _, _ ->
-                finish()
-            }
-            .setCancelable(false)
-            .show()
+    private fun checkServiceStatus() {
+        cameraViewModel.checkServiceStatus()
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        // Don't stop service on activity destroy
+        if (cameraViewModel.checkServiceStatus() == true) {
+            cameraViewModel.stopCameraService()
+        }
     }
 }
