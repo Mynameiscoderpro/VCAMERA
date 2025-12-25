@@ -90,7 +90,7 @@ class MainActivity : LoadingActivity() {
     }
 
     fun showFloatButton(show: Boolean) {
-        val tranY: Float = Resolution.convertDpToPixel(120F, App.getContext())
+        val tranY: Float = Resolution.convertDpToPixel(120F, App.getContext() ?: return)
         val time = 200L
         if (show) {
             viewBinding.fab.animate().translationY(0f).alpha(1f).setDuration(time).start()

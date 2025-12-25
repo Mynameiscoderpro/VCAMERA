@@ -15,15 +15,21 @@ class App : Application() {
         /**
          * Get app instance
          */
+        @JvmStatic
         fun getInstance(): App? = instance
 
         /**
-         * Get application context (non-null)
-         * This method is used throughout the app
+         * Get application context
+         * Returns null if app not initialized yet (during early static initialization)
+         * This prevents crashes when classes are loaded before onCreate()
          */
-        fun getContext(): Context {
-            return instance?.applicationContext
-                ?: throw IllegalStateException("App not initialized yet")
+        @JvmStatic
+        fun getContext(): Context? {
+            val ctx = instance?.applicationContext
+            if (ctx == null) {
+                Log.w(TAG, "getContext() called before App.onCreate() - returning null")
+            }
+            return ctx
         }
     }
 
