@@ -3,11 +3,8 @@ package virtual.camera.app.ui
 import android.os.Bundle
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.navigation.fragment.NavHostFragment
-import androidx.navigation.ui.setupWithNavController
-import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.google.android.material.tabs.TabLayoutMediator
 import dagger.hilt.android.AndroidEntryPoint
-import virtual.camera.app.R
 import virtual.camera.app.databinding.ActivityMainBinding
 import virtual.camera.app.viewmodel.CameraViewModel
 
@@ -22,17 +19,26 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        setupNavigation()
+        setupToolbar()
+        setupViewPager()
         observeViewModel()
     }
 
-    private fun setupNavigation() {
-        val navHostFragment = supportFragmentManager
-            .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
-        val navController = navHostFragment.navController
+    private fun setupToolbar() {
+        setSupportActionBar(binding.toolbar)
+    }
 
-        val bottomNav = findViewById<BottomNavigationView>(R.id.bottom_navigation)
-        bottomNav?.setupWithNavController(navController)
+    private fun setupViewPager() {
+        val adapter = MainPagerAdapter(this)
+        binding.viewPager.adapter = adapter
+
+        TabLayoutMediator(binding.tabLayout, binding.viewPager) { tab, position ->
+            tab.text = when (position) {
+                0 -> "Camera"
+                1 -> "Apps"
+                else -> null
+            }
+        }.attach()
     }
 
     private fun observeViewModel() {
@@ -49,10 +55,11 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateServiceStatus(isRunning: Boolean) {
         // Update UI to reflect service status
+        supportActionBar?.subtitle = if (isRunning) "Service Running" else "Service Stopped"
     }
 
     private fun showError(message: String) {
-        // Show error message
+        // Show error message using Snackbar or Toast
     }
 
     override fun onResume() {
@@ -66,8 +73,6 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        if (cameraViewModel.checkServiceStatus() == true) {
-            cameraViewModel.stopCameraService()
-        }
+        // Optional: stop service on app close
     }
 }
