@@ -78,7 +78,7 @@ class MainActivity : AppCompatActivity() {
         // Update camera toggle menu item
         menu?.findItem(R.id.action_toggle_camera)?.apply {
             val isRunning = cameraViewModel.checkServiceStatus()
-            MenuItem.setTitle = if (isRunning) {
+            title = if (isRunning) {
                 getString(R.string.stop_camera)
             } else {
                 getString(R.string.start_camera)
