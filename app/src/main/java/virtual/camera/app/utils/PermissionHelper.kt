@@ -8,7 +8,6 @@ import androidx.core.content.ContextCompat
 
 object PermissionHelper {
 
-    // Change from private to public
     val REQUIRED_PERMISSIONS = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         arrayOf(
             Manifest.permission.CAMERA,
@@ -29,5 +28,9 @@ object PermissionHelper {
         return REQUIRED_PERMISSIONS.all {
             ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
         }
+    }
+
+    fun hasAllPermissions(context: Context): Boolean {
+        return hasPermissions(context)
     }
 }

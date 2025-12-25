@@ -1,105 +1,78 @@
 package virtual.camera.app.viewmodel
 
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import virtual.camera.app.data.models.AppInfo
-import virtual.camera.app.data.models.InstalledAppBean
 import virtual.camera.app.data.repository.AppsRepository
 
-class AppsViewModel(
-    private val repository: AppsRepository = AppsRepository()
-) : ViewModel() {
+class AppsViewModel(application: Application) : AndroidViewModel(application) {
 
-    val appsLiveData = MutableLiveData<List<AppInfo>>()
-    val availableAppsLiveData = MutableLiveData<List<InstalledAppBean>>()
-    val resultLiveData = MutableLiveData<String>()
-    val launchLiveData = MutableLiveData<Boolean>()
-    val errorLiveData = MutableLiveData<String>()
-    val loadingLiveData = MutableLiveData<Boolean>()
+    private val repository = AppsRepository(application)
 
-    /**
-     * Get installed apps for user (as Flow)
-     */
-    fun getInstalledApps(userId: Int): Flow<List<AppInfo>> {
-        return repository.getVmInstallList(userId)
+    private val _installedApps = MutableStateFlow<List<AppInfo>>(emptyList())
+    val installedApps: StateFlow<List<AppInfo>> = _installedApps
+
+    private val _isLoading = MutableLiveData<Boolean>(false)
+    val isLoading: LiveData<Boolean> = _isLoading
+
+    init {
+        loadInstalledApps()
     }
 
-    /**
-     * Get available apps to install
-     */
-    fun getAvailableApps() {
+    fun loadInstalledApps() {
         viewModelScope.launch {
+            _isLoading.value = true
             try {
-                loadingLiveData.postValue(true)
-                val apps = repository.previewInstallList()
-                availableAppsLiveData.postValue(apps)
-                loadingLiveData.postValue(false)
+                _installedApps.value = repository.getInstalledApps()
             } catch (e: Exception) {
-                errorLiveData.postValue("Failed to load apps: ${e.message}")
-                loadingLiveData.postValue(false)
+                _installedApps.value = emptyList()
+            } finally {
+                _isLoading.value = false
             }
         }
     }
 
-    /**
-     * Install app
-     */
-    fun installApp(source: String, userId: Int) {
+    fun installApp(packageName: String) {
         viewModelScope.launch {
-            loadingLiveData.postValue(true)
-            repository.installApk(source, userId, resultLiveData)
-            loadingLiveData.postValue(false)
+            try {
+                repository.installApk(packageName)
+                loadInstalledApps()
+            } catch (e: Exception) {
+                // Handle error
+            }
         }
     }
 
-    /**
-     * Launch app
-     */
-    fun launchApp(packageName: String, userId: Int) {
+    fun launchApp(packageName: String) {
         viewModelScope.launch {
-            repository.launchApk(packageName, userId, launchLiveData)
+            repository.launchApk(packageName)
         }
     }
 
-    /**
-     * Uninstall app
-     */
-    fun uninstallApp(packageName: String, userId: Int) {
+    fun uninstallApp(packageName: String) {
         viewModelScope.launch {
-            loadingLiveData.postValue(true)
-            val success = repository.unInstall(packageName, userId)
-            resultLiveData.postValue(
-                if (success) "App uninstalled successfully"
-                else "Failed to uninstall app"
-            )
-            loadingLiveData.postValue(false)
+            try {
+                repository.unInstall(packageName)
+                loadInstalledApps()
+            } catch (e: Exception) {
+                // Handle error
+            }
         }
     }
 
-    /**
-     * Clear app data
-     */
-    fun clearAppData(packageName: String, userId: Int) {
+    fun clearAppData(packageName: String) {
         viewModelScope.launch {
-            loadingLiveData.postValue(true)
-            val success = repository.clearData(packageName, userId)
-            resultLiveData.postValue(
-                if (success) "App data cleared"
-                else "Failed to clear data"
-            )
-            loadingLiveData.postValue(false)
-        }
-    }
-
-    /**
-     * Update app position for reordering
-     */
-    fun updateAppPosition(appId: Long, newPosition: Int) {
-        viewModelScope.launch {
-            repository.updateAppPosition(appId, newPosition)
+            try {
+                repository.clearData(packageName)
+            } catch (e: Exception) {
+                // Handle error
+            }
         }
     }
 }

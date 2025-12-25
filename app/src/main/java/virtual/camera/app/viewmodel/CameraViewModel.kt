@@ -1,93 +1,79 @@
 package virtual.camera.app.viewmodel
 
-import android.content.Context
-import android.net.Uri
+import android.app.Application
+import android.content.Intent
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.launch
+import virtual.camera.app.camera.VirtualCameraService
 import virtual.camera.app.data.models.CameraConfig
-import virtual.camera.app.data.models.VideoSource
 import virtual.camera.app.data.models.VideoTransform
 
-class CameraViewModel : ViewModel() {
+class CameraViewModel(application: Application) : AndroidViewModel(getApplication()) {
 
-    val cameraConfigLiveData = MutableLiveData<CameraConfig>()
-    val serviceStatusLiveData = MutableLiveData<Boolean>()
-    val errorLiveData = MutableLiveData<String>()
+    private val _cameraEnabled = MutableLiveData<Boolean>(false)
+    val cameraEnabled: LiveData<Boolean> = _cameraEnabled
 
-    private var currentConfig = CameraConfig.DEFAULT
+    private val _selectedVideo = MutableLiveData<String?>()
+    val selectedVideo: LiveData<String?> = _selectedVideo
 
-    /**
-     * Start virtual camera service
-     */
-    fun startCameraService(context: Context, config: CameraConfig) {
-        try {
-            currentConfig = config
-            VirtualCameraService.startService(context, config)
-            serviceStatusLiveData.postValue(true)
-            cameraConfigLiveData.postValue(config)
-        } catch (e: Exception) {
-            errorLiveData.postValue("Failed to start camera service: ${e.message}")
-            serviceStatusLiveData.postValue(false)
+    private val _serviceStatusLiveData = MutableLiveData<Boolean>(false)
+    val serviceStatusLiveData: LiveData<Boolean> = _serviceStatusLiveData
+
+    private val _errorLiveData = MutableLiveData<String?>()
+    val errorLiveData: LiveData<String?> = _errorLiveData
+
+    fun setVideoSource(videoPath: String) {
+        _selectedVideo.value = videoPath
+    }
+
+    fun startCameraService(videoPath: String) {
+        viewModelScope.launch {
+            try {
+                val intent = Intent(getApplication(), VirtualCameraService::class.java)
+                intent.action = VirtualCameraService.ACTION_START
+                intent.putExtra("VIDEO_PATH", videoPath)
+                getApplication<Application>().startService(intent)
+                _cameraEnabled.value = true
+                _serviceStatusLiveData.value = true
+            } catch (e: Exception) {
+                _cameraEnabled.value = false
+                _serviceStatusLiveData.value = false
+                _errorLiveData.value = e.message
+            }
         }
     }
 
-    /**
-     * Stop virtual camera service
-     */
-    fun stopCameraService(context: Context) {
-        try {
-            VirtualCameraService.stopService(context)
-            serviceStatusLiveData.postValue(false)
-        } catch (e: Exception) {
-            errorLiveData.postValue("Failed to stop camera service: ${e.message}")
+    fun stopCameraService() {
+        viewModelScope.launch {
+            try {
+                val intent = Intent(getApplication(), VirtualCameraService::class.java)
+                intent.action = VirtualCameraService.ACTION_STOP
+                getApplication<Application>().stopService(intent)
+                _cameraEnabled.value = false
+                _serviceStatusLiveData.value = false
+            } catch (e: Exception) {
+                _errorLiveData.value = e.message
+            }
         }
     }
 
-    /**
-     * Update camera configuration
-     */
-    fun updateCameraConfig(config: CameraConfig) {
-        currentConfig = config
-        VirtualCameraService.getInstance()?.updateConfig(config)
-        cameraConfigLiveData.postValue(config)
+    fun checkServiceStatus() {
+        // TODO: Implement service status check
+        _serviceStatusLiveData.value = _cameraEnabled.value ?: false
     }
 
-    /**
-     * Set video source
-     */
-    fun setVideoSource(source: VideoSource, uri: Uri?) {
-        val newConfig = currentConfig.copy(
-            source = source,
-            sourceUri = uri
-        )
-        updateCameraConfig(newConfig)
-    }
-
-    /**
-     * Set video transform
-     */
     fun setVideoTransform(transform: VideoTransform) {
-        val newConfig = currentConfig.copy(transform = transform)
-        updateCameraConfig(newConfig)
+        viewModelScope.launch {
+            // TODO: Apply video transformation
+        }
     }
 
-    /**
-     * Toggle camera enabled/disabled
-     */
-    fun toggleCamera(enabled: Boolean) {
-        val newConfig = currentConfig.copy(isEnabled = enabled)
-        updateCameraConfig(newConfig)
+    fun saveCameraConfig(config: CameraConfig) {
+        viewModelScope.launch {
+            // TODO: Save camera configuration
+        }
     }
-
-    /**
-     * Check if service is running
-     */
-    fun checkServiceStatus(): Boolean {
-        return VirtualCameraService.getInstance()?.isServiceActive() ?: false
-    }
-
-    /**
-     * Get current configuration
-     */
-    fun getCurrentConfig(): CameraConfig = currentConfig
 }

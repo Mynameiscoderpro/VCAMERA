@@ -3,7 +3,6 @@ package virtual.camera.app
 import android.app.Application
 import android.content.Context
 import android.util.Log
-import virtual.camera.app.core.VirtualEngine
 import virtual.camera.app.data.database.AppDatabase
 
 class App : Application() {
