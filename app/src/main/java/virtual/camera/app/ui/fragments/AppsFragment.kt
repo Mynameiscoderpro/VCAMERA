@@ -68,8 +68,9 @@ class AppsFragment : Fragment() {
     }
 
     private fun observeViewModel() {
+        // FIXED: Changed from viewModel.getInstalledApps() to viewModel.installedApps
         lifecycleScope.launch {
-            viewModel.getInstalledApps().collectLatest { apps ->
+            viewModel.installedApps.collectLatest { apps ->
                 adapter.submitList(apps)
                 binding.root.findViewById<View?>(getResources().getIdentifier("emptyView", "id", requireContext().packageName))?.visibility =
                     if (apps.isEmpty()) View.VISIBLE else View.GONE
