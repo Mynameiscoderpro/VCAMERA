@@ -43,4 +43,13 @@
 
     <!-- Divider -->
     <color name="divider">#1F000000</color>
+
+    <!-- Missing colors for old layouts -->
+    <color name="primary">#6200EE</color>
+    <color name="primary_dark">#3700B3</color>
+    <color name="accent">#03DAC5</color>
+    <color name="primary_text">#DE000000</color>
+    <color name="secondary_text">#99000000</color>
+    <color name="primary_light">#BB86FC</color>
+
 </resources>
