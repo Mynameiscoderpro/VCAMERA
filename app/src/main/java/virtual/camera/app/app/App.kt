@@ -1,8 +1,10 @@
-package virtual.camera.app.app
+package virtual.camera.app
 
 import android.app.Application
 import android.content.Context
 import android.util.Log
+import virtual.camera.app.core.VirtualEngine
+import virtual.camera.app.data.database.AppDatabase
 
 class App : Application() {
 
@@ -12,74 +14,56 @@ class App : Application() {
         @Volatile
         private var instance: App? = null
 
-        /**
-         * Get app instance
-         */
-        @JvmStatic
-        fun getInstance(): App? = instance
-
-        /**
-         * Get application context - SAFE version
-         * Returns application context or throws meaningful error
-         */
         @JvmStatic
         fun getContext(): Context {
-            val app = instance
-            if (app == null) {
-                Log.e(TAG, "CRITICAL: App.getContext() called before Application.onCreate()")
-                Log.e(TAG, "Stack trace:", Exception("Context access before init"))
-                throw IllegalStateException(
-                    "Application not initialized. Make sure App class is declared in AndroidManifest.xml"
-                )
-            }
-            return app.applicationContext
+            return instance?.applicationContext
+                ?: throw IllegalStateException("App not initialized")
         }
+
+        @JvmStatic
+        lateinit var virtualEngine: VirtualEngine
+            private set
+
+        @JvmStatic
+        lateinit var database: AppDatabase
+            private set
     }
 
     override fun attachBaseContext(base: Context?) {
         super.attachBaseContext(base)
-        // Set instance as early as possible
         instance = this
-        Log.d(TAG, "App instance initialized in attachBaseContext")
+        Log.d(TAG, "Application context attached")
     }
 
     override fun onCreate() {
         super.onCreate()
+        Log.d(TAG, "Application onCreate")
 
-        Log.d(TAG, "=== VCamera App Starting ===")
+        // Initialize database
+        database = AppDatabase.getInstance(this)
+        Log.d(TAG, "Database initialized")
 
-        // Detect virtual environment by checking package name
-        val packageName = try {
-            applicationContext.packageName
-        } catch (e: Exception) {
-            "unknown"
-        }
+        // Initialize virtual engine
+        virtualEngine = VirtualEngine.getInstance(this)
+        virtualEngine.initialize()
+        Log.d(TAG, "Virtual engine initialized")
 
-        val originalPackage = "virtual.camera.app"
-        val isVirtual = packageName != originalPackage
+        // Detect if running in virtual environment
+        detectVirtualEnvironment()
+    }
 
-        Log.d(TAG, "Current Package: $packageName")
-        Log.d(TAG, "Original Package: $originalPackage")
-        Log.d(TAG, "Running in Virtual Environment: $isVirtual")
-
+    private fun detectVirtualEnvironment() {
+        val isVirtual = virtualEngine.isRunningInVirtualEnvironment()
         if (isVirtual) {
-            Log.d(TAG, "Detected MochiCloner or similar virtual space")
-            Log.d(TAG, "Applying virtual environment optimizations...")
-
-            // Give virtual environment time to fully initialize
-            try {
-                Thread.sleep(500) // Reduced to 500ms
-            } catch (e: InterruptedException) {
-                Log.w(TAG, "Initialization delay interrupted")
-            }
+            // App is running inside another virtual environment
+            Log.w(TAG, "⚠️ Running in virtual environment detected")
+        } else {
+            Log.d(TAG, "✅ Running in real environment")
         }
-
-        Log.d(TAG, "VCamera initialized successfully!")
     }
 
     override fun onTerminate() {
-        Log.d(TAG, "App terminating")
         super.onTerminate()
-        instance = null
+        Log.d(TAG, "Application terminated")
     }
 }
