@@ -5,14 +5,15 @@ pluginManagement {
         gradlePluginPortal()
     }
 }
+
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         google()
         mavenCentral()
-        maven { url 'https://jitpack.io' } // This enables JitPack libraries
+        maven { url 'https://jitpack.io' }
     }
 }
+
+rootProject.name = "VirtualCamera"
 include ':app'
-include ':camera-core'
-rootProject.name = "VCamera"
