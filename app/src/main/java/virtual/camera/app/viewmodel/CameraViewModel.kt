@@ -4,7 +4,6 @@ import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import virtual.camera.app.camera.VirtualCameraService
 import virtual.camera.app.data.models.CameraConfig
 import virtual.camera.app.data.models.VideoSource
 import virtual.camera.app.data.models.VideoTransform
