@@ -21,19 +21,48 @@ class AppsViewModel(application: Application) : AndroidViewModel(application) {
     private val _isLoading = MutableLiveData<Boolean>(false)
     val isLoading: LiveData<Boolean> = _isLoading
 
+    private val _loadingLiveData = MutableLiveData<Boolean>(false)
+    val loadingLiveData: LiveData<Boolean> = _loadingLiveData
+
+    private val _launchLiveData = MutableLiveData<Boolean>()
+    val launchLiveData: LiveData<Boolean> = _launchLiveData
+
+    private val _resultLiveData = MutableLiveData<String?>()
+    val resultLiveData: LiveData<String?> = _resultLiveData
+
+    private val _availableAppsLiveData = MutableLiveData<List<AppInfo>>()
+    val availableAppsLiveData: LiveData<List<AppInfo>> = _availableAppsLiveData
+
     init {
         loadInstalledApps()
     }
 
+    fun getInstalledApps() = installedApps
+
     fun loadInstalledApps() {
         viewModelScope.launch {
             _isLoading.value = true
+            _loadingLiveData.value = true
             try {
                 _installedApps.value = repository.getInstalledApps()
             } catch (e: Exception) {
                 _installedApps.value = emptyList()
             } finally {
                 _isLoading.value = false
+                _loadingLiveData.value = false
+            }
+        }
+    }
+
+    fun getAvailableApps() {
+        viewModelScope.launch {
+            _loadingLiveData.value = true
+            try {
+                _availableAppsLiveData.value = repository.getInstalledApps()
+            } catch (e: Exception) {
+                _availableAppsLiveData.value = emptyList()
+            } finally {
+                _loadingLiveData.value = false
             }
         }
     }
@@ -41,27 +70,30 @@ class AppsViewModel(application: Application) : AndroidViewModel(application) {
     fun installApp(packageName: String) {
         viewModelScope.launch {
             try {
-                repository.installApk(packageName)
+                val result = repository.installApk(packageName)
+                _resultLiveData.value = if (result) "Installed successfully" else "Installation failed"
                 loadInstalledApps()
             } catch (e: Exception) {
-                // Handle error
+                _resultLiveData.value = "Error: ${e.message}"
             }
         }
     }
 
     fun launchApp(packageName: String) {
         viewModelScope.launch {
-            repository.launchApk(packageName)
+            val result = repository.launchApk(packageName)
+            _launchLiveData.value = result
         }
     }
 
     fun uninstallApp(packageName: String) {
         viewModelScope.launch {
             try {
-                repository.unInstall(packageName)
+                val result = repository.unInstall(packageName)
+                _resultLiveData.value = if (result) "Uninstalled successfully" else "Uninstall failed"
                 loadInstalledApps()
             } catch (e: Exception) {
-                // Handle error
+                _resultLiveData.value = "Error: ${e.message}"
             }
         }
     }
@@ -69,9 +101,10 @@ class AppsViewModel(application: Application) : AndroidViewModel(application) {
     fun clearAppData(packageName: String) {
         viewModelScope.launch {
             try {
-                repository.clearData(packageName)
+                val result = repository.clearData(packageName)
+                _resultLiveData.value = if (result) "Data cleared" else "Clear failed"
             } catch (e: Exception) {
-                // Handle error
+                _resultLiveData.value = "Error: ${e.message}"
             }
         }
     }

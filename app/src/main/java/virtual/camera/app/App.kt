@@ -44,7 +44,7 @@ class App : Application() {
 
         // Initialize virtual engine
         virtualEngine = VirtualEngine.getInstance(this)
-        virtualEngine.initialize()
+        // VirtualEngine.initialize(this)
         Log.d(TAG, "Virtual engine initialized")
 
         // Detect if running in virtual environment

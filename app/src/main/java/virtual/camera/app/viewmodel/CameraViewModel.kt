@@ -11,7 +11,7 @@ import virtual.camera.app.camera.VirtualCameraService
 import virtual.camera.app.data.models.CameraConfig
 import virtual.camera.app.data.models.VideoTransform
 
-class CameraViewModel(application: Application) : AndroidViewModel(getApplication()) {
+class CameraViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _cameraEnabled = MutableLiveData<Boolean>(false)
     val cameraEnabled: LiveData<Boolean> = _cameraEnabled
@@ -60,9 +60,10 @@ class CameraViewModel(application: Application) : AndroidViewModel(getApplicatio
         }
     }
 
-    fun checkServiceStatus() {
-        // TODO: Implement service status check
-        _serviceStatusLiveData.value = _cameraEnabled.value ?: false
+    fun checkServiceStatus(): Boolean {
+        val status = _cameraEnabled.value ?: false
+        _serviceStatusLiveData.value = status
+        return status
     }
 
     fun setVideoTransform(transform: VideoTransform) {
