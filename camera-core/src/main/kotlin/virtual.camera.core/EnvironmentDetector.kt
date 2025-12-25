@@ -201,10 +201,13 @@ object EnvironmentDetector {
     /**
      * Log environment information
      */
+    /**
+     * Log environment information
+     */
     fun logEnvironmentInfo() {
         Log.d(TAG, "=== Environment Detection ===")
         Log.d(TAG, "Virtual Environment: ${getVirtualEnvironmentName()}")
-        Log.d(TAG, "Is Virtual: ${isRunningInVirtualEnvironment(null)}")
+        // Note: Can't check isVirtual without Context in static logging
         Log.d(TAG, "Android Version: ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})")
         Log.d(TAG, "Device: ${Build.MANUFACTURER} ${Build.MODEL}")
         Log.d(TAG, "============================")
