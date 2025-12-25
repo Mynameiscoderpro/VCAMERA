@@ -2,53 +2,59 @@ package virtual.camera.app.app
 
 import android.app.Application
 import android.content.Context
-import android.content.Intent
-import androidx.core.content.ContextCompat
-import virtual.camera.core.service.VirtualCameraService
-import virtual.camera.core.CameraConfig
+import android.util.Log
 
 class App : Application() {
 
     companion object {
+        private const val TAG = "VCameraApp"
+
         @Volatile
-        private lateinit var instance: App
+        private var instance: App? = null
 
-        @JvmStatic
-        fun getContext(): Context = instance.applicationContext  // ✅ FIXED: Use applicationContext
+        fun getInstance(): App? = instance
+    }
 
-        @JvmStatic
-        fun startVirtualCamera() {
-            val context = getContext()
-            val config = CameraConfig.load(context)
-
-            if (config.methodType != CameraConfig.METHOD_DISABLE) {
-                val intent = Intent(context, VirtualCameraService::class.java).apply {
-                    action = VirtualCameraService.ACTION_START
-                    putExtra(VirtualCameraService.EXTRA_CONFIG, config)
-                }
-
-                // ✅ FIXED: Check if service is already running
-                if (!VirtualCameraService.isRunning) {
-                    ContextCompat.startForegroundService(context, intent)
-                }
+    override fun attachBaseContext(base: Context?) {
+        try {
+            super.attachBaseContext(base)
+            Log.d(TAG, "Base context attached")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error attaching base context: ${e.message}", e)
+            // Continue anyway - MochiCloner might handle it
+            try {
+                super.attachBaseContext(base)
+            } catch (e2: Exception) {
+                Log.e(TAG, "Critical error in attachBaseContext", e2)
             }
-        }
-
-        @JvmStatic
-        fun stopVirtualCamera() {
-            val context = getContext()
-            val intent = Intent(context, VirtualCameraService::class.java).apply {
-                action = VirtualCameraService.ACTION_STOP
-            }
-            context.startService(intent)
         }
     }
 
     override fun onCreate() {
-        super.onCreate()
-        instance = this
+        try {
+            super.onCreate()
+            instance = this
 
-        // ✅ FIXED: Don't auto-start on app launch
-        // Let user manually enable from MainActivity
+            Log.d(TAG, "=== VCamera App Starting ===")
+
+            // Detect if running in virtual environment
+            val packageName = applicationContext.packageName
+            val isVirtual = packageName != "virtual.camera.app"
+
+            Log.d(TAG, "Package: $packageName")
+            Log.d(TAG, "Is Virtual Environment: $isVirtual")
+
+            if (isVirtual) {
+                Log.d(TAG, "Running in MochiCloner or similar virtual environment")
+                // Add small delay for virtual environment initialization
+                Thread.sleep(500)
+            }
+
+            Log.d(TAG, "App initialized successfully")
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error initializing app: ${e.message}", e)
+            // Don't crash, let MochiCloner handle it
+        }
     }
 }
