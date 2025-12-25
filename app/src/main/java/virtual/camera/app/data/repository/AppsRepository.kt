@@ -7,7 +7,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
-import virtual.camera.app.App
 import virtual.camera.app.core.VirtualEngine
 import virtual.camera.app.data.database.entities.InstalledAppEntity
 import virtual.camera.app.data.models.AppInfo
