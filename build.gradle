@@ -1,16 +1,22 @@
 buildscript {
-    ext.kotlin_version = "2.0.21"
+    ext.kotlin_version = '1.9.20'
     repositories {
         google()
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.7.3'
+        classpath 'com.android.tools.build:gradle:8.2.0'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
 
-// ✅ REMOVED: allprojects block (now managed in settings.gradle)
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+        maven { url 'https://jitpack.io' }
+    }
+}
 
 task clean(type: Delete) {
     delete rootProject.buildDir
