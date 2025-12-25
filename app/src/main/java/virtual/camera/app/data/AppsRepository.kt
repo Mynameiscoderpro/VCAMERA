@@ -22,7 +22,7 @@ import java.io.File
 class AppsRepository {
     val TAG: String = "AppsRepository"
     private var mInstalledList = mutableListOf<AppInfo>()
-    private val packageManager = App.getContext().packageManager
+    private val packageManager by lazy { App.getContext().packageManager }
 
     fun previewInstallList() {
         synchronized(mInstalledList) {
