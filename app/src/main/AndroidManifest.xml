@@ -32,10 +32,9 @@
     <uses-permission android:name="android.permission.FLASHLIGHT" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
-    <!-- ✅ CRITICAL: Foreground Service Permissions for Android 14+ -->
+    <!-- ✅ CRITICAL FIX: Foreground Service Permissions for Android 14+ -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <!-- Network & Connectivity -->
@@ -135,7 +134,7 @@
     <uses-permission android:name="ohos.permission.GET_BUNDLE_INFO_PRIVILEGED"/>
 
     <!-- Hardware Features -->
-    <uses-feature android:name="android.hardware.camera" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <application
         android:name="virtual.camera.app.app.App"
@@ -186,13 +185,14 @@
             android:exported="false"
             android:screenOrientation="portrait" />
 
-        <!-- ✅ CRITICAL: Virtual Camera Service Declaration -->
+        <!-- ✅ FIXED: Virtual Camera Service Declaration -->
         <service
             android:name="virtual.camera.core.service.VirtualCameraService"
             android:enabled="true"
             android:exported="false"
-            android:foregroundServiceType="camera|mediaProjection"
-            android:stopWithTask="false" />
+            android:foregroundServiceType="camera"
+            android:stopWithTask="false"
+            tools:ignore="ForegroundServicePermission" />
 
     </application>
 

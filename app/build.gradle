@@ -4,12 +4,12 @@ plugins {
 }
 
 android {
-    compileSdk 36  // Android 16 support
+    compileSdk 36
 
     defaultConfig {
         applicationId "virtual.camera.app"
-        minSdkVersion 23  // Works on Android 6.0+
-        targetSdkVersion 36  // Target Android 16
+        minSdkVersion 23
+        targetSdkVersion 36
         versionCode 3600
         versionName "3.6.0"
 
@@ -75,7 +75,7 @@ dependencies {
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0"
 
-    // Media3 - Video player for HLS/RTSP/HTTP
+    // Media3 - Video player
     def media3_version = "1.5.0"
     implementation "androidx.media3:media3-exoplayer:$media3_version"
     implementation "androidx.media3:media3-exoplayer-hls:$media3_version"
@@ -88,14 +88,12 @@ dependencies {
     implementation 'com.afollestad.material-dialogs:input:3.3.0'
     implementation 'com.tbuonomo:dotsindicator:5.0'
 
-    // ✅ MISSING LIBRARIES - NOW ADDED:
+    // ✅ THESE WERE MISSING:
     implementation 'com.github.Ferfalk:SimpleSearchView:0.2.1'
     implementation 'com.github.nukc:StateView:2.1.1'
 
-    // JSON handling
+    // JSON & Image Loading
     implementation 'com.google.code.gson:gson:2.11.0'
-
-    // Glide - Image loading
     implementation 'com.github.bumptech.glide:glide:4.16.0'
 
     // Camera core module
