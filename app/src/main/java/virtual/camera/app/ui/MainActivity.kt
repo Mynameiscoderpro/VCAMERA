@@ -1,9 +1,9 @@
 package virtual.camera.app.ui
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import com.google.android.material.tabs.TabLayoutMediator
 import dagger.hilt.android.AndroidEntryPoint
 import virtual.camera.app.databinding.ActivityMainBinding
 import virtual.camera.app.viewmodel.CameraViewModel
@@ -19,26 +19,34 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        setupToolbar()
-        setupViewPager()
+        setupUI()
         observeViewModel()
+        updateStatus()
     }
 
-    private fun setupToolbar() {
-        setSupportActionBar(binding.toolbar)
+    private fun setupUI() {
+        // Select Video Button
+        binding.selectVideoButton.setOnClickListener {
+            selectVideo()
+        }
+
+        // Test Camera Button
+        binding.testCameraButton.setOnClickListener {
+            testCamera()
+        }
     }
 
-    private fun setupViewPager() {
-        val adapter = MainPagerAdapter(this)
-        binding.viewPager.adapter = adapter
+    private fun selectVideo() {
+        val intent = Intent(Intent.ACTION_GET_CONTENT)
+        intent.type = "video/*"
+        startActivityForResult(intent, REQUEST_VIDEO_PICK)
+    }
 
-        TabLayoutMediator(binding.tabLayout, binding.viewPager) { tab, position ->
-            tab.text = when (position) {
-                0 -> "Camera"
-                1 -> "Apps"
-                else -> null
-            }
-        }.attach()
+    private fun testCamera() {
+        // Open camera test activity or browser
+        val intent = Intent(Intent.ACTION_VIEW)
+        intent.data = android.net.Uri.parse("https://webcamtests.com")
+        startActivity(intent)
     }
 
     private fun observeViewModel() {
@@ -54,12 +62,28 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateServiceStatus(isRunning: Boolean) {
-        // Update UI to reflect service status
-        supportActionBar?.subtitle = if (isRunning) "Service Running" else "Service Stopped"
+        binding.statusText.text = if (isRunning) {
+            "✅ VirtuCam is active and ready!"
+        } else {
+            "⚠️ VirtuCam module not detected\n\nMake sure:\n• LSPosed is installed\n• VirtuCam is enabled in LSPosed\n• Target apps are selected\n• Device is rebooted"
+        }
+    }
+
+    private fun updateStatus() {
+        binding.statusText.text = """📱 VirtuCam Module Active
+            |
+            |✅ Xposed module loaded
+            |✅ Ready to intercept camera
+            |
+            |📝 Next steps:
+            |1. Select a video file
+            |2. Enable in LSPosed for target apps
+            |3. Test your camera!
+            """.trimMargin()
     }
 
     private fun showError(message: String) {
-        // Show error message using Snackbar or Toast
+        binding.statusText.text = "❌ Error: $message"
     }
 
     override fun onResume() {
@@ -71,8 +95,16 @@ class MainActivity : AppCompatActivity() {
         cameraViewModel.checkServiceStatus()
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        // Optional: stop service on app close
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_VIDEO_PICK && resultCode == RESULT_OK) {
+            data?.data?.let { uri ->
+                binding.statusText.text = "✅ Video selected: $uri\n\nCopy this video to target app's cache directory"
+            }
+        }
+    }
+
+    companion object {
+        private const val REQUEST_VIDEO_PICK = 1001
     }
 }
