@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Permissions -->
     <uses-permission android:name="android.permission.CAMERA" />
@@ -9,7 +10,7 @@
     
     <!-- Required for Android 11+ to query all installed packages -->
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"
-        android:tools="http://schemas.android.com/tools" />
+        tools:ignore="QueryAllPackagesPermission" />
 
     <application
         android:name=".App"
