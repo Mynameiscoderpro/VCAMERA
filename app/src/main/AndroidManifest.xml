@@ -6,6 +6,10 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.INTERNET" />
+    
+    <!-- Required for Android 11+ to query all installed packages -->
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"
+        android:tools="http://schemas.android.com/tools" />
 
     <application
         android:name=".App"
