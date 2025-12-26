@@ -62,23 +62,22 @@ class AppsFragment : Fragment() {
     }
 
     private fun setupFab() {
-        binding.root.findViewById<View?>(getResources().getIdentifier("fabInstallApp", "id", requireContext().packageName))?.setOnClickListener {
+        binding.fab.setOnClickListener {
             startActivity(Intent(requireContext(), InstallAppsActivity::class.java))
         }
     }
 
     private fun observeViewModel() {
-        // FIXED: Changed from viewModel.getInstalledApps() to viewModel.installedApps
         lifecycleScope.launch {
             viewModel.installedApps.collectLatest { apps ->
                 adapter.submitList(apps)
-                binding.root.findViewById<View?>(getResources().getIdentifier("emptyView", "id", requireContext().packageName))?.visibility =
+                binding.emptyView.visibility =
                     if (apps.isEmpty()) View.VISIBLE else View.GONE
             }
         }
 
         viewModel.loadingLiveData.observe(viewLifecycleOwner) { isLoading ->
-            binding.root.findViewById<View?>(getResources().getIdentifier("progressBar", "id", requireContext().packageName))?.visibility =
+            binding.progressBar.visibility =
                 if (isLoading == true) View.VISIBLE else View.GONE
         }
 
@@ -96,7 +95,7 @@ class AppsFragment : Fragment() {
     }
 
     private fun showAppOptions(app: virtual.camera.app.data.models.AppInfo) {
-        val appName = app.packageName // Using packageName as appName
+        val appName = app.packageName
         MaterialAlertDialogBuilder(requireContext())
             .setTitle(appName)
             .setItems(arrayOf("Launch", "Clear Data", "Uninstall")) { dialog, which ->
