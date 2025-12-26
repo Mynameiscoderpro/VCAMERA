@@ -1,24 +1,21 @@
 package virtual.camera.app.xposed
 
-import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.SurfaceTexture
 import android.hardware.camera2.CameraDevice
+import android.hardware.camera2.CaptureRequest
 import android.view.Surface
 import de.robv.android.xposed.IXposedHookLoadPackage
 import de.robv.android.xposed.XC_MethodHook
 import de.robv.android.xposed.XposedBridge
 import de.robv.android.xposed.XposedHelpers
 import de.robv.android.xposed.callbacks.XC_LoadPackage
-import java.nio.ByteBuffer
 import kotlin.math.sin
 
 /**
- * VirtuCam Xposed Module - Phase 2: Synthetic YUV Video Injection
- * 
- * Generates proper YUV format video for camera surfaces.
+ * VirtuCam Xposed Module - Intercepts camera at capture request level
  */
 class VirtuCamXposed : IXposedHookLoadPackage {
 
@@ -27,7 +24,7 @@ class VirtuCamXposed : IXposedHookLoadPackage {
         private const val WIDTH = 1280
         private const val HEIGHT = 720
         
-        private val activeSurfaces = mutableMapOf<String, VirtualCameraSurface>()
+        private val surfaceRenderers = mutableMapOf<Surface, SurfaceRenderer>()
     }
 
     override fun handleLoadPackage(lpparam: XC_LoadPackage.LoadPackageParam) {
@@ -37,7 +34,6 @@ class VirtuCamXposed : IXposedHookLoadPackage {
 
         try {
             hookCamera2Impl(lpparam)
-            hookLegacyCamera(lpparam)
             XposedBridge.log("$TAG: ✅ Hooked ${lpparam.packageName}")
         } catch (e: Exception) {
             XposedBridge.log("$TAG: ❌ Error: ${e.message}")
@@ -46,6 +42,7 @@ class VirtuCamXposed : IXposedHookLoadPackage {
 
     private fun hookCamera2Impl(lpparam: XC_LoadPackage.LoadPackageParam) {
         try {
+            // Hook CameraManager.openCamera
             val cameraManagerClass = XposedHelpers.findClass(
                 "android.hardware.camera2.CameraManager",
                 lpparam.classLoader
@@ -65,36 +62,38 @@ class VirtuCamXposed : IXposedHookLoadPackage {
                 }
             )
 
+            // Hook session creation to track surfaces
             hookCreateCaptureSession(lpparam)
+            
+            // Hook capture requests
+            hookCaptureRequests(lpparam)
+
             XposedBridge.log("$TAG: Camera2 hooked")
         } catch (e: Exception) {
-            XposedBridge.log("$TAG: Failed Camera2: ${e.message}")
+            XposedBridge.log("$TAG: Failed: ${e.message}")
         }
     }
 
     private fun hookCreateCaptureSession(lpparam: XC_LoadPackage.LoadPackageParam) {
         try {
             val hookCallback = object : XC_MethodHook() {
-                override fun beforeHookedMethod(param: MethodHookParam) {
+                override fun afterHookedMethod(param: MethodHookParam) {
                     try {
+                        // After session is created, start rendering to surfaces
                         val surfaces = param.args[0] as? List<Surface> ?: return
-                        if (surfaces.isEmpty()) return
-
-                        XposedBridge.log("$TAG: 🎨 Injecting virtual camera...")
                         
-                        // Use the FIRST original surface from the app
-                        val originalSurface = surfaces[0]
+                        XposedBridge.log("$TAG: 🎬 Session created with ${surfaces.size} surfaces")
                         
-                        // Start rendering to it
-                        val virtualCam = VirtualCameraSurface(originalSurface, lpparam.packageName)
-                        virtualCam.start()
-                        
-                        activeSurfaces[lpparam.packageName] = virtualCam
-                        
-                        XposedBridge.log("$TAG: ✅ Virtual camera rendering started!")
+                        surfaces.forEach { surface ->
+                            if (!surfaceRenderers.containsKey(surface)) {
+                                val renderer = SurfaceRenderer(surface)
+                                renderer.start()
+                                surfaceRenderers[surface] = renderer
+                                XposedBridge.log("$TAG: ✅ Started rendering to surface")
+                            }
+                        }
                     } catch (e: Exception) {
-                        XposedBridge.log("$TAG: ❌ Error: ${e.message}")
-                        e.printStackTrace()
+                        XposedBridge.log("$TAG: Session hook error: ${e.message}")
                     }
                 }
             }
@@ -112,114 +111,140 @@ class VirtuCamXposed : IXposedHookLoadPackage {
                 android.os.Handler::class.java,
                 hookCallback
             )
-            
-            XposedBridge.log("$TAG: Hooked createCaptureSession")
         } catch (e: Exception) {
-            XposedBridge.log("$TAG: Error: ${e.message}")
+            XposedBridge.log("$TAG: createCaptureSession error: ${e.message}")
         }
     }
 
-    private fun hookLegacyCamera(lpparam: XC_LoadPackage.LoadPackageParam) {
+    private fun hookCaptureRequests(lpparam: XC_LoadPackage.LoadPackageParam) {
         try {
-            val cameraClass = XposedHelpers.findClass(
-                "android.hardware.Camera",
+            val sessionClass = XposedHelpers.findClass(
+                "android.hardware.camera2.impl.CameraCaptureSessionImpl",
                 lpparam.classLoader
             )
 
+            // Hook setRepeatingRequest (for preview)
             XposedHelpers.findAndHookMethod(
-                cameraClass,
-                "open",
-                Int::class.javaPrimitiveType,
+                sessionClass,
+                "setRepeatingRequest",
+                CaptureRequest::class.java,
+                "android.hardware.camera2.CameraCaptureSession\$CaptureCallback",
+                android.os.Handler::class.java,
                 object : XC_MethodHook() {
-                    override fun afterHookedMethod(param: MethodHookParam) {
-                        XposedBridge.log("$TAG: Legacy camera opened")
+                    override fun beforeHookedMethod(param: MethodHookParam) {
+                        XposedBridge.log("$TAG: 🔄 Repeating capture request started")
                     }
                 }
             )
 
-            XposedBridge.log("$TAG: Legacy hooked")
+            XposedBridge.log("$TAG: Capture requests hooked")
         } catch (e: Exception) {
-            XposedBridge.log("$TAG: Legacy failed: ${e.message}")
+            XposedBridge.log("$TAG: Capture hook failed: ${e.message}")
         }
     }
 
     /**
-     * Renders synthetic video to camera surface
+     * Renders synthetic video to surface continuously
      */
-    class VirtualCameraSurface(private val surface: Surface, private val tag: String) {
+    class SurfaceRenderer(private val surface: Surface) {
+        @Volatile
         private var running = false
         private var frameCount = 0
         private val paint = Paint().apply {
             isAntiAlias = true
-            textSize = 80f
             textAlign = Paint.Align.CENTER
             style = Paint.Style.FILL
         }
         
         private val renderThread = Thread {
+            XposedBridge.log("VirtuCam: Render thread started")
             while (running) {
                 try {
                     renderFrame()
-                    Thread.sleep(33) // ~30 FPS
+                    Thread.sleep(33) // 30 FPS
+                } catch (e: InterruptedException) {
+                    break
                 } catch (e: Exception) {
-                    XposedBridge.log("VirtuCam: Render error: ${e.message}")
-                    if (!running) break
+                    if (running) {
+                        XposedBridge.log("VirtuCam: Render error: ${e.message}")
+                    }
+                    break
                 }
             }
+            XposedBridge.log("VirtuCam: Render thread stopped")
         }
 
         fun start() {
-            running = true
-            renderThread.start()
-        }
-
-        private fun renderFrame() {
-            try {
-                val canvas = surface.lockCanvas(null)
-                canvas?.let {
-                    drawColorBars(it)
-                    surface.unlockCanvasAndPost(it)
-                    frameCount++
-                }
-            } catch (e: IllegalArgumentException) {
-                // Surface destroyed, stop rendering
-                running = false
-            } catch (e: Exception) {
-                XposedBridge.log("VirtuCam: Frame error: ${e.message}")
+            if (!running) {
+                running = true
+                renderThread.start()
             }
         }
 
-        private fun drawColorBars(canvas: Canvas) {
-            // Solid color background that changes over time
+        private fun renderFrame() {
+            var canvas: Canvas? = null
+            try {
+                canvas = surface.lockCanvas(null)
+                if (canvas != null) {
+                    drawFrame(canvas)
+                    surface.unlockCanvasAndPost(canvas)
+                    frameCount++
+                    
+                    if (frameCount % 30 == 0) {
+                        XposedBridge.log("VirtuCam: 🎨 Frame $frameCount rendered")
+                    }
+                }
+            } catch (e: IllegalArgumentException) {
+                // Surface destroyed
+                running = false
+            } catch (e: Exception) {
+                if (running) {
+                    XposedBridge.log("VirtuCam: Frame render failed: ${e.message}")
+                }
+            }
+        }
+
+        private fun drawFrame(canvas: Canvas) {
+            val width = canvas.width.toFloat()
+            val height = canvas.height.toFloat()
             val time = frameCount / 30.0
-            val hue = ((time * 60) % 360).toFloat()
-            val color = Color.HSVToColor(floatArrayOf(hue, 0.8f, 0.9f))
-            canvas.drawColor(color)
             
-            // Draw VirtuCam branding
-            paint.color = Color.WHITE
-            paint.textSize = 120f
-            paint.strokeWidth = 4f
-            paint.style = Paint.Style.FILL_AND_STROKE
+            // Animated rainbow background
+            val hue = ((time * 30) % 360).toFloat()
+            val bgColor = Color.HSVToColor(floatArrayOf(hue, 0.6f, 0.9f))
+            canvas.drawColor(bgColor)
             
-            val centerX = WIDTH / 2f
-            val centerY = HEIGHT / 2f
+            // White text with shadow
+            paint.color = Color.BLACK
+            paint.textSize = width * 0.15f
+            paint.style = Paint.Style.FILL
+            
+            val centerX = width / 2
+            val centerY = height / 2
+            
+            // Shadow
+            canvas.drawText("VirtuCam", centerX + 4, centerY - 56, paint)
             
             // Main text
+            paint.color = Color.WHITE
             canvas.drawText("VirtuCam", centerX, centerY - 60, paint)
             
-            paint.textSize = 60f
-            canvas.drawText("ACTIVE", centerX, centerY + 40, paint)
-            
-            paint.textSize = 40f
-            canvas.drawText("Frame: $frameCount", centerX, centerY + 120, paint)
-            
-            // Animated circle
-            val radius = 50f + (sin(time * 2) * 20).toFloat()
+            paint.textSize = width * 0.08f
+            paint.color = Color.BLACK
+            canvas.drawText("ACTIVE", centerX + 3, centerY + 37, paint)
             paint.color = Color.WHITE
+            canvas.drawText("ACTIVE", centerX, centerY + 34, paint)
+            
+            // Frame counter
+            paint.textSize = width * 0.05f
+            paint.color = Color.WHITE
+            canvas.drawText("Frame: $frameCount", centerX, centerY + 100, paint)
+            
+            // Pulsing circle
+            val radius = (width * 0.08f) + (sin(time * 3) * width * 0.02).toFloat()
             paint.style = Paint.Style.STROKE
-            paint.strokeWidth = 8f
-            canvas.drawCircle(centerX, centerY + 200, radius, paint)
+            paint.strokeWidth = width * 0.01f
+            canvas.drawCircle(centerX, centerY + 180, radius, paint)
         }
 
         fun stop() {
