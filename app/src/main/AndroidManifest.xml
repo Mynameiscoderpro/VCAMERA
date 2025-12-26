@@ -21,6 +21,17 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.VirtualCamera">
 
+        <!-- Xposed Module Metadata -->
+        <meta-data
+            android:name="xposedmodule"
+            android:value="true" />
+        <meta-data
+            android:name="xposeddescription"
+            android:value="Virtual Camera - Replace camera feed with custom video/image in virtual spaces" />
+        <meta-data
+            android:name="xposedminversion"
+            android:value="82" />
+
         <activity
             android:name=".ui.MainActivity"
             android:exported="true">
