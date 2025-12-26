@@ -36,8 +36,8 @@ class VirtuCamXposed : IXposedHookLoadPackage {
         }
 
         try {
-            // Hook Camera2 API
-            hookCamera2(lpparam)
+            // Hook Camera2 API implementation
+            hookCamera2Impl(lpparam)
             
             // Hook legacy Camera API (for older apps)
             hookLegacyCamera(lpparam)
@@ -49,36 +49,31 @@ class VirtuCamXposed : IXposedHookLoadPackage {
     }
 
     /**
-     * Hook Camera2 API (Android 5.0+)
+     * Hook Camera2 API Implementation (Android 5.0+)
+     * Hook CameraManager instead of abstract CameraDevice
      */
-    private fun hookCamera2(lpparam: XC_LoadPackage.LoadPackageParam) {
+    private fun hookCamera2Impl(lpparam: XC_LoadPackage.LoadPackageParam) {
         try {
-            // Hook CameraDevice.createCaptureSession
-            val cameraDeviceClass = XposedHelpers.findClass(
-                "android.hardware.camera2.CameraDevice",
+            // Hook CameraManager.openCamera to intercept camera opening
+            val cameraManagerClass = XposedHelpers.findClass(
+                "android.hardware.camera2.CameraManager",
                 lpparam.classLoader
             )
 
             XposedHelpers.findAndHookMethod(
-                cameraDeviceClass,
-                "createCaptureSession",
-                List::class.java,
-                "android.hardware.camera2.CameraCaptureSession\$StateCallback",
+                cameraManagerClass,
+                "openCamera",
+                String::class.java,
+                "android.hardware.camera2.CameraDevice\$StateCallback",
                 android.os.Handler::class.java,
                 object : XC_MethodHook() {
                     override fun beforeHookedMethod(param: MethodHookParam) {
                         try {
-                            val context = getContextFromParam(param)
-                            if (context != null && isCameraHookEnabled(context, lpparam.packageName)) {
-                                XposedBridge.log("$TAG: Intercepting camera session for ${lpparam.packageName}")
-                                // We'll inject our custom surface here
-                                val surfaces = param.args[0] as? List<*>
-                                surfaces?.let {
-                                    replaceSurfacesWithCustomFeed(context, it, param)
-                                }
-                            }
+                            val cameraId = param.args[0] as String
+                            XposedBridge.log("$TAG: Camera $cameraId opening for ${lpparam.packageName}")
+                            // TODO: Inject custom camera device here in Phase 2
                         } catch (e: Exception) {
-                            XposedBridge.log("$TAG: Error in camera hook: ${e.message}")
+                            XposedBridge.log("$TAG: Error in openCamera hook: ${e.message}")
                         }
                     }
                 }
@@ -109,7 +104,6 @@ class VirtuCamXposed : IXposedHookLoadPackage {
                     override fun afterHookedMethod(param: MethodHookParam) {
                         try {
                             XposedBridge.log("$TAG: Legacy camera opened for ${lpparam.packageName}")
-                            // Store camera instance for later hooking
                         } catch (e: Exception) {
                             XposedBridge.log("$TAG: Error in legacy camera hook: ${e.message}")
                         }
@@ -125,13 +119,10 @@ class VirtuCamXposed : IXposedHookLoadPackage {
                 object : XC_MethodHook() {
                     override fun beforeHookedMethod(param: MethodHookParam) {
                         try {
-                            val context = getContextFromParam(param)
-                            if (context != null && isCameraHookEnabled(context, lpparam.packageName)) {
-                                XposedBridge.log("$TAG: Replacing preview texture for ${lpparam.packageName}")
-                                // Replace with custom texture
-                            }
+                            XposedBridge.log("$TAG: Preview texture being set for ${lpparam.packageName}")
+                            // TODO: Replace with custom texture in Phase 2
                         } catch (e: Exception) {
-                            XposedBridge.log("$TAG: Error replacing preview texture: ${e.message}")
+                            XposedBridge.log("$TAG: Error in setPreviewTexture hook: ${e.message}")
                         }
                     }
                 }
@@ -144,37 +135,10 @@ class VirtuCamXposed : IXposedHookLoadPackage {
     }
 
     /**
-     * Replace camera surfaces with custom video feed
-     */
-    private fun replaceSurfacesWithCustomFeed(
-        context: Context,
-        surfaces: List<*>,
-        param: XC_MethodHook.MethodHookParam
-    ) {
-        try {
-            val videoPath = getVideoPath(context)
-            if (videoPath.isNullOrEmpty() || !File(videoPath).exists()) {
-                XposedBridge.log("$TAG: No valid video path configured")
-                return
-            }
-
-            XposedBridge.log("$TAG: Using video: $videoPath")
-            
-            // Create custom surface from video
-            // This will be implemented in the next phase
-            // For now, we're just logging that we intercepted the camera
-            
-        } catch (e: Exception) {
-            XposedBridge.log("$TAG: Error replacing surfaces: ${e.message}")
-        }
-    }
-
-    /**
      * Get application context from method parameters
      */
     private fun getContextFromParam(param: XC_MethodHook.MethodHookParam): Context? {
         return try {
-            // Try to get context from the object instance
             val thisObject = param.thisObject
             XposedHelpers.callMethod(thisObject, "getContext") as? Context
         } catch (e: Exception) {
