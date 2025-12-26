@@ -5,11 +5,13 @@ import android.os.Looper;
 import android.view.Gravity;
 import android.widget.Toast;
 
+import virtual.camera.app.App;
+
 
 public class ToastUtils {
 
     /**
-     * 这里是方法的重载，用于开放不同的参数
+     * 这里是方法的重载,用于开放不同的参数
      *
      * @param messageID
      */
