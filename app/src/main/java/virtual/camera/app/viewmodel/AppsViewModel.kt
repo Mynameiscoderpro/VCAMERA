@@ -35,16 +35,13 @@ class AppsViewModel(application: Application) : AndroidViewModel(application) {
     private val _resultLiveData = MutableLiveData<String?>()
     val resultLiveData: LiveData<String?> = _resultLiveData
 
-    // Available apps
+    // Available apps (all device apps)
     private val _availableAppsLiveData = MutableLiveData<List<AppInfo>>()
     val availableAppsLiveData: LiveData<List<AppInfo>> = _availableAppsLiveData
 
     init {
         loadInstalledApps()
     }
-
-    // REMOVED: fun getInstalledApps() - This was causing the conflict
-    // Use the property 'installedApps' directly instead
 
     fun loadInstalledApps() {
         viewModelScope.launch {
@@ -65,7 +62,8 @@ class AppsViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             _loadingLiveData.value = true
             try {
-                _availableAppsLiveData.value = repository.getInstalledApps()
+                // Get all device apps excluding VCamera itself
+                _availableAppsLiveData.value = repository.getAllDeviceApps()
             } catch (e: Exception) {
                 _availableAppsLiveData.value = emptyList()
             } finally {
