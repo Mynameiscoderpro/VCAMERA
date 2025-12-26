@@ -97,8 +97,9 @@ dependencies {
     implementation 'com.github.bumptech.glide:glide:4.16.0'
     kapt 'com.github.bumptech.glide:compiler:4.16.0'
 
-    // Xposed API for camera hooking (using JitPack mirror)
-    compileOnly 'com.github.rovo89:XposedBridgeApi:82'
+    // Xposed API - will be provided by MochiCloner at runtime
+    // Using provided files in libs folder
+    compileOnly files('libs/XposedBridgeApi-82.jar')
 
     // Testing
     testImplementation 'junit:junit:4.13.2'
