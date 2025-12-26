@@ -16,6 +16,7 @@ class App : Application() {
     override fun onCreate() {
         super.onCreate()
         instance = this
+        context = applicationContext
 
         // TODO: Initialize VirtualEngine when ready
         // VirtualEngine.initialize(this)
@@ -31,5 +32,18 @@ class App : Application() {
     companion object {
         lateinit var instance: App
             private set
+
+        lateinit var context: Context
+            private set
+
+        @JvmStatic
+        fun getInstance(): App {
+            return instance
+        }
+
+        @JvmStatic
+        fun getContext(): Context {
+            return context
+        }
     }
 }

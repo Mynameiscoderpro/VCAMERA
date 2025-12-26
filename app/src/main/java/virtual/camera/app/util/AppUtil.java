@@ -1,49 +1,29 @@
-package virtual.camera.app
+package virtual.camera.app.util;
 
-import android.app.Application
-import android.content.Context
-import androidx.multidex.MultiDex
-import dagger.hilt.android.HiltAndroidApp
+import android.app.ActivityManager;
+import android.content.Context;
+import android.os.Process;
 
-@HiltAndroidApp
-class App : Application() {
+import virtual.camera.app.App;
+import virtual.camera.app.settings.LogUtil;
 
-    override fun attachBaseContext(base: Context) {
-        super.attachBaseContext(base)
-        MultiDex.install(this)
-    }
-
-    override fun onCreate() {
-        super.onCreate()
-        instance = this
-        context = applicationContext
-
-        // TODO: Initialize VirtualEngine when ready
-        // VirtualEngine.initialize(this)
-    }
-
-    override fun onTerminate() {
-        super.onTerminate()
-
-        // TODO: Shutdown VirtualEngine when ready
-        // VirtualEngine.shutdown()
-    }
-
-    companion object {
-        lateinit var instance: App
-        private set
-
-        lateinit var context: Context
-        private set
-
-        @JvmStatic
-        fun getInstance(): App {
-            return instance
-        }
-
-        @JvmStatic
-        fun getContext(): Context {
-            return context
+public class AppUtil {
+    public static void killAllApps() {
+        try {
+            int uid = App.getContext().getPackageManager().getApplicationInfo(App.getContext().getPackageName(), 0).uid;
+            String str = App.getContext().getPackageName();
+            for (ActivityManager.RunningAppProcessInfo processInfo : ((ActivityManager) App.getContext().getSystemService(Context.ACTIVITY_SERVICE)).getRunningAppProcesses()) {
+                if (processInfo.uid != uid) {
+                    continue;
+                }
+                if(processInfo.processName.startsWith(str) && !processInfo.processName.contains(":agent")){
+                    continue;
+                }
+                LogUtil.log("kill processInfo:"+processInfo.processName);
+                Process.killProcess(processInfo.pid);
+            }
+        } catch (Throwable th) {
+            th.printStackTrace();
         }
     }
 }
