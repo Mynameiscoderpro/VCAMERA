@@ -4,7 +4,7 @@ import android.app.ActivityManager;
 import android.content.Context;
 import android.os.Process;
 
-import virtual.camera.app.app.App;
+import virtual.camera.app.App;
 import virtual.camera.app.settings.LogUtil;
 
 public class AppUtil {

@@ -5,7 +5,7 @@ import android.os.Looper;
 import android.view.Gravity;
 import android.widget.Toast;
 
-import virtual.camera.app.app.App;
+import virtual.camera.app.App;
 
 
 public class ToastUtils {

@@ -1,4 +1,4 @@
-package virtual.camera.app.app;
+package virtual.camera.app;
 
 import android.app.Application;
 import android.content.Context;
