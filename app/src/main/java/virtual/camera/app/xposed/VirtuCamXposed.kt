@@ -31,6 +31,9 @@ class VirtuCamXposed : IXposedHookLoadPackage {
         private const val KEY_VIDEO_PATH = "selected_video_path"
         private const val KEY_TARGET_PACKAGES = "target_packages"
         
+        // TEST: Hardcoded video path
+        private const val TEST_VIDEO_PATH = "/sdcard/DCIM/Camera/Rot.mp4"
+        
         // Store active video players per package
         private val activeMediaPlayers = mutableMapOf<String, MediaPlayer>()
         private val activeSurfaceTextures = mutableMapOf<String, SurfaceTexture>()
@@ -76,23 +79,15 @@ class VirtuCamXposed : IXposedHookLoadPackage {
                     override fun beforeHookedMethod(param: MethodHookParam) {
                         try {
                             val cameraId = param.args[0] as String
-                            val callback = param.args[1]
                             
                             XposedBridge.log("$TAG: Camera $cameraId opening for ${lpparam.packageName}")
                             
-                            // Get context to check settings
-                            val manager = param.thisObject
-                            val context = XposedHelpers.callMethod(manager, "getApplicationContext") as? Context
-                            
-                            if (context != null && isCameraHookEnabled(context, lpparam.packageName)) {
-                                val videoPath = getVideoPath(context)
-                                if (!videoPath.isNullOrEmpty() && File(videoPath).exists()) {
-                                    XposedBridge.log("$TAG: Injecting virtual camera for ${lpparam.packageName}")
-                                    XposedBridge.log("$TAG: Using video: $videoPath")
-                                    // Video injection will happen in createCaptureSession hook
-                                } else {
-                                    XposedBridge.log("$TAG: No valid video configured, using real camera")
-                                }
+                            // TEST: Check if video exists
+                            val videoFile = File(TEST_VIDEO_PATH)
+                            if (videoFile.exists()) {
+                                XposedBridge.log("$TAG: TEST MODE - Video found: $TEST_VIDEO_PATH (${videoFile.length()} bytes)")
+                            } else {
+                                XposedBridge.log("$TAG: TEST MODE - Video NOT found: $TEST_VIDEO_PATH")
                             }
                         } catch (e: Exception) {
                             XposedBridge.log("$TAG: Error in openCamera hook: ${e.message}")
@@ -119,34 +114,36 @@ class VirtuCamXposed : IXposedHookLoadPackage {
             val hookCallback = object : XC_MethodHook() {
                 override fun beforeHookedMethod(param: MethodHookParam) {
                     try {
+                        XposedBridge.log("$TAG: createCaptureSession called for ${lpparam.packageName}")
+                        
                         val device = param.thisObject as? CameraDevice ?: return
                         
-                        // Get context
-                        val context = getContextFromDevice(device) ?: return
-                        
-                        if (!isCameraHookEnabled(context, lpparam.packageName)) {
-                            return
-                        }
-                        
-                        val videoPath = getVideoPath(context)
-                        if (videoPath.isNullOrEmpty() || !File(videoPath).exists()) {
+                        // TEST: Use hardcoded video path
+                        val videoFile = File(TEST_VIDEO_PATH)
+                        if (!videoFile.exists()) {
+                            XposedBridge.log("$TAG: Video file not found: $TEST_VIDEO_PATH")
                             return
                         }
 
-                        XposedBridge.log("$TAG: Replacing camera surfaces with video feed")
+                        XposedBridge.log("$TAG: Replacing camera surfaces with video feed from: $TEST_VIDEO_PATH")
                         
                         // Get the surfaces list
                         val surfaces = param.args[0] as? List<Surface>
                         if (surfaces.isNullOrEmpty()) {
+                            XposedBridge.log("$TAG: No surfaces provided to createCaptureSession")
                             return
                         }
 
+                        XposedBridge.log("$TAG: Original surfaces count: ${surfaces.size}")
+
                         // Create virtual camera surface from video
-                        val virtualSurface = createVirtualCameraSurface(context, videoPath, lpparam.packageName)
+                        val virtualSurface = createVirtualCameraSurface(TEST_VIDEO_PATH, lpparam.packageName)
                         if (virtualSurface != null) {
                             // Replace surfaces with our virtual surface
                             param.args[0] = listOf(virtualSurface)
-                            XposedBridge.log("$TAG: Successfully injected virtual camera surface")
+                            XposedBridge.log("$TAG: ✅ Successfully injected virtual camera surface!")
+                        } else {
+                            XposedBridge.log("$TAG: ❌ Failed to create virtual camera surface")
                         }
                     } catch (e: Exception) {
                         XposedBridge.log("$TAG: Error in createCaptureSession hook: ${e.message}")
@@ -184,8 +181,10 @@ class VirtuCamXposed : IXposedHookLoadPackage {
     /**
      * Create a virtual camera surface from video file
      */
-    private fun createVirtualCameraSurface(context: Context, videoPath: String, packageName: String): Surface? {
+    private fun createVirtualCameraSurface(videoPath: String, packageName: String): Surface? {
         return try {
+            XposedBridge.log("$TAG: Creating virtual camera surface...")
+            
             // Clean up previous player if exists
             cleanupMediaPlayer(packageName)
 
@@ -194,6 +193,8 @@ class VirtuCamXposed : IXposedHookLoadPackage {
             surfaceTexture.setDefaultBufferSize(1920, 1080)
             
             val surface = Surface(surfaceTexture)
+            
+            XposedBridge.log("$TAG: Surface created, initializing MediaPlayer...")
             
             // Create MediaPlayer to play video
             val mediaPlayer = MediaPlayer().apply {
@@ -208,7 +209,7 @@ class VirtuCamXposed : IXposedHookLoadPackage {
             activeMediaPlayers[packageName] = mediaPlayer
             activeSurfaceTextures[packageName] = surfaceTexture
             
-            XposedBridge.log("$TAG: Virtual camera surface created successfully")
+            XposedBridge.log("$TAG: MediaPlayer started successfully, video is playing!")
             surface
         } catch (e: Exception) {
             XposedBridge.log("$TAG: Failed to create virtual camera surface: ${e.message}")
@@ -251,46 +252,19 @@ class VirtuCamXposed : IXposedHookLoadPackage {
                 object : XC_MethodHook() {
                     override fun beforeHookedMethod(param: MethodHookParam) {
                         try {
-                            val camera = param.thisObject
-                            val context = getContextFromCamera(camera)
-                            
-                            if (context != null && isCameraHookEnabled(context, lpparam.packageName)) {
-                                val videoPath = getVideoPath(context)
-                                if (!videoPath.isNullOrEmpty() && File(videoPath).exists()) {
-                                    XposedBridge.log("$TAG: Injecting video into legacy camera preview")
-                                    
-                                    // Create custom texture with video feed
-                                    val customTexture = createLegacyCameraTexture(context, videoPath, lpparam.packageName)
-                                    if (customTexture != null) {
-                                        param.args[0] = customTexture
-                                        XposedBridge.log("$TAG: Successfully replaced legacy camera texture")
-                                    }
+                            val videoFile = File(TEST_VIDEO_PATH)
+                            if (videoFile.exists()) {
+                                XposedBridge.log("$TAG: Injecting video into legacy camera preview")
+                                
+                                // Create custom texture with video feed
+                                val customTexture = createLegacyCameraTexture(TEST_VIDEO_PATH, lpparam.packageName)
+                                if (customTexture != null) {
+                                    param.args[0] = customTexture
+                                    XposedBridge.log("$TAG: ✅ Successfully replaced legacy camera texture!")
                                 }
                             }
                         } catch (e: Exception) {
                             XposedBridge.log("$TAG: Error replacing preview texture: ${e.message}")
-                        }
-                    }
-                }
-            )
-
-            // Hook Camera.setPreviewDisplay() for older API
-            XposedHelpers.findAndHookMethod(
-                cameraClass,
-                "setPreviewDisplay",
-                "android.view.SurfaceHolder",
-                object : XC_MethodHook() {
-                    override fun beforeHookedMethod(param: MethodHookParam) {
-                        try {
-                            val camera = param.thisObject
-                            val context = getContextFromCamera(camera)
-                            
-                            if (context != null && isCameraHookEnabled(context, lpparam.packageName)) {
-                                XposedBridge.log("$TAG: Legacy camera setPreviewDisplay called")
-                                // Video injection through SurfaceHolder
-                            }
-                        } catch (e: Exception) {
-                            XposedBridge.log("$TAG: Error in setPreviewDisplay hook: ${e.message}")
                         }
                     }
                 }
@@ -305,7 +279,7 @@ class VirtuCamXposed : IXposedHookLoadPackage {
     /**
      * Create SurfaceTexture with video for legacy camera
      */
-    private fun createLegacyCameraTexture(context: Context, videoPath: String, packageName: String): SurfaceTexture? {
+    private fun createLegacyCameraTexture(videoPath: String, packageName: String): SurfaceTexture? {
         return try {
             cleanupMediaPlayer(packageName)
             
@@ -325,6 +299,7 @@ class VirtuCamXposed : IXposedHookLoadPackage {
             activeMediaPlayers[packageName] = mediaPlayer
             activeSurfaceTextures[packageName] = surfaceTexture
             
+            XposedBridge.log("$TAG: Legacy camera texture created with video")
             surfaceTexture
         } catch (e: Exception) {
             XposedBridge.log("$TAG: Failed to create legacy camera texture: ${e.message}")
@@ -347,71 +322,6 @@ class VirtuCamXposed : IXposedHookLoadPackage {
             activeSurfaceTextures.remove(packageName)
         } catch (e: Exception) {
             XposedBridge.log("$TAG: Error cleaning up media player: ${e.message}")
-        }
-    }
-
-    /**
-     * Get context from CameraDevice
-     */
-    private fun getContextFromDevice(device: CameraDevice): Context? {
-        return try {
-            // Try to get context from device's internal fields
-            val contextField = device.javaClass.getDeclaredField("mContext")
-            contextField.isAccessible = true
-            contextField.get(device) as? Context
-        } catch (e: Exception) {
-            // Alternative: try to get from CameraManager
-            try {
-                val managerField = device.javaClass.getDeclaredField("mCameraManager")
-                managerField.isAccessible = true
-                val manager = managerField.get(device)
-                XposedHelpers.callMethod(manager, "getApplicationContext") as? Context
-            } catch (e2: Exception) {
-                null
-            }
-        }
-    }
-
-    /**
-     * Get context from legacy Camera
-     */
-    private fun getContextFromCamera(camera: Any): Context? {
-        return try {
-            val contextField = camera.javaClass.getDeclaredField("mContext")
-            contextField.isAccessible = true
-            contextField.get(camera) as? Context
-        } catch (e: Exception) {
-            null
-        }
-    }
-
-    /**
-     * Check if camera hook is enabled for this package
-     */
-    private fun isCameraHookEnabled(context: Context, packageName: String): Boolean {
-        return try {
-            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_WORLD_READABLE)
-            val enabled = prefs.getBoolean(KEY_ENABLED, true) // Default enabled
-            val targetPackages = prefs.getStringSet(KEY_TARGET_PACKAGES, emptySet()) ?: emptySet()
-            
-            enabled && (targetPackages.isEmpty() || targetPackages.contains(packageName))
-        } catch (e: Exception) {
-            XposedBridge.log("$TAG: Error checking settings: ${e.message}")
-            // Default to enabled if can't read settings
-            true
-        }
-    }
-
-    /**
-     * Get configured video path from settings
-     */
-    private fun getVideoPath(context: Context): String? {
-        return try {
-            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_WORLD_READABLE)
-            prefs.getString(KEY_VIDEO_PATH, null)
-        } catch (e: Exception) {
-            XposedBridge.log("$TAG: Error getting video path: ${e.message}")
-            null
         }
     }
 }
