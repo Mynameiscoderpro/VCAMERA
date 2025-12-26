@@ -9,12 +9,26 @@ import virtual.camera.app.data.models.AppInfo
 
 class AppsRepository(private val context: Context) {
 
+    // Get apps installed in VCamera virtual environment
     suspend fun getInstalledApps(): List<AppInfo> = withContext(Dispatchers.IO) {
+        // TODO: Get apps from virtual environment
+        // For now, return empty list
+        emptyList()
+    }
+
+    // Get all user apps on device (excluding VCamera itself)
+    suspend fun getAllDeviceApps(): List<AppInfo> = withContext(Dispatchers.IO) {
         val packageManager = context.packageManager
         val packages = packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
+        val ownPackageName = context.packageName
 
         packages
-            .filter { it.flags and ApplicationInfo.FLAG_SYSTEM == 0 }
+            .filter { 
+                // Include only user-installed apps (not system apps)
+                it.flags and ApplicationInfo.FLAG_SYSTEM == 0 &&
+                // Exclude VCamera itself
+                it.packageName != ownPackageName
+            }
             .map { appInfo ->
                 AppInfo(
                     packageName = appInfo.packageName,
@@ -40,7 +54,7 @@ class AppsRepository(private val context: Context) {
     }
 
     suspend fun installApk(packageName: String): Boolean {
-        // TODO: Implement app installation logic
+        // TODO: Implement app installation logic to virtual environment
         return false
     }
 
@@ -57,7 +71,7 @@ class AppsRepository(private val context: Context) {
     }
 
     suspend fun unInstall(packageName: String): Boolean {
-        // TODO: Implement app uninstallation logic
+        // TODO: Implement app uninstallation logic from virtual environment
         return false
     }
 
