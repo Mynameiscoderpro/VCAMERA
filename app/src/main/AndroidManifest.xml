@@ -16,7 +16,6 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.VirtualCamera">
 
-        <!-- Your activities here -->
         <activity
             android:name=".ui.MainActivity"
             android:exported="true">
