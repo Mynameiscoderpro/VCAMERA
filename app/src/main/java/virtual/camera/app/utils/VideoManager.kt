@@ -8,7 +8,8 @@ import java.io.FileOutputStream
 
 /**
  * Manages video file storage and retrieval
- * Stores video in app's internal storage and shares path via SharedPreferences
+ * Stores video in app's internal storage
+ * Xposed module accesses file directly (world-readable file permissions)
  */
 class VideoManager(private val context: Context) {
 
@@ -16,14 +17,11 @@ class VideoManager(private val context: Context) {
         private const val PREFS_NAME = "virtucam_prefs"
         private const val KEY_VIDEO_PATH = "video_path"
         private const val VIDEO_FILENAME = "virtual_camera.mp4"
-        
-        // Shared preferences accessible by Xposed module
-        private const val SHARED_PREFS_PATH = "/data/data/virtual.camera.app/shared_prefs/virtucam_prefs.xml"
     }
 
     private val prefs: SharedPreferences = context.getSharedPreferences(
-        PREFS_NAME, 
-        Context.MODE_WORLD_READABLE // Accessible by Xposed module
+        PREFS_NAME,
+        Context.MODE_PRIVATE // Use MODE_PRIVATE instead of deprecated MODE_WORLD_READABLE
     )
 
     /**
@@ -34,7 +32,7 @@ class VideoManager(private val context: Context) {
             val inputStream = context.contentResolver.openInputStream(uri)
                 ?: return false
 
-            // Save to internal storage (accessible to all apps via Xposed)
+            // Save to internal storage
             val videoFile = getVideoStorageFile()
             val outputStream = FileOutputStream(videoFile)
 
@@ -48,7 +46,13 @@ class VideoManager(private val context: Context) {
             prefs.edit().putString(KEY_VIDEO_PATH, videoFile.absolutePath).apply()
             
             // Make file world-readable for Xposed access
-            videoFile.setReadable(true, false)
+            // This works because we're setting permissions on the file itself, not SharedPreferences
+            try {
+                videoFile.setReadable(true, false)
+                videoFile.setExecutable(true, false)
+            } catch (e: Exception) {
+                // Permissions may fail on some devices, but Xposed can still access via root
+            }
 
             true
         } catch (e: Exception) {
@@ -85,7 +89,7 @@ class VideoManager(private val context: Context) {
      * Get video storage file location
      */
     private fun getVideoStorageFile(): File {
-        // Store in app's files directory (accessible via Xposed)
+        // Store in app's files directory
         return File(context.filesDir, VIDEO_FILENAME)
     }
 
