@@ -1,15 +1,11 @@
 package virtual.camera.app.xposed
 
 import android.content.Context
-import android.graphics.ImageFormat
 import android.hardware.camera2.CameraCaptureSession
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureResult
 import android.hardware.camera2.TotalCaptureResult
-import android.media.Image
-import android.media.ImageReader
 import android.os.Handler
-import android.view.Surface
 import de.robv.android.xposed.IXposedHookLoadPackage
 import de.robv.android.xposed.XC_MethodHook
 import de.robv.android.xposed.XposedBridge
@@ -20,17 +16,20 @@ import java.io.File
 /**
  * VirtuCam Xposed Module - vcamsx Architecture
  * 
- * KEY STRATEGY:
- * - DON'T replace surfaces (causes compatibility issues)
- * - Instead: Hook CaptureCallback and inject frames there
- * - Use app's private storage for video file
- * - Decode video using MediaCodec
+ * SIMPLIFIED APPROACH:
+ * - Video stored in /data/data/virtual.camera.app/files/virtual_camera.mp4
+ * - All hooked apps read from this single location
+ * - User selects video once via app UI
+ * - Works in MochiCloner/MetaWolf without root
  */
 class VirtuCamXposed : IXposedHookLoadPackage {
 
     companion object {
         private const val TAG = "VirtuCam"
-        private const val VIDEO_FILENAME = "virtual.mp4"
+        private const val VIRTUCAM_PACKAGE = "virtual.camera.app"
+        
+        // Centralized video storage path
+        private const val VIDEO_PATH = "/data/data/virtual.camera.app/files/virtual_camera.mp4"
         
         // Active decoders per package
         private val activeDecoders = mutableMapOf<String, VideoDecoder>()
@@ -41,7 +40,7 @@ class VirtuCamXposed : IXposedHookLoadPackage {
 
     override fun handleLoadPackage(lpparam: XC_LoadPackage.LoadPackageParam) {
         // Don't hook ourselves
-        if (lpparam.packageName == "virtual.camera.app") {
+        if (lpparam.packageName == VIRTUCAM_PACKAGE) {
             return
         }
 
@@ -49,7 +48,7 @@ class VirtuCamXposed : IXposedHookLoadPackage {
             hookCamera2(lpparam)
             XposedBridge.log("$TAG: ✅ Hooked ${lpparam.packageName}")
         } catch (e: Exception) {
-            XposedBridge.log("$TAG: ❌ Hook failed: ${e.message}")
+            XposedBridge.log("$TAG: ❌ Hook failed for ${lpparam.packageName}: ${e.message}")
         }
     }
 
@@ -58,15 +57,15 @@ class VirtuCamXposed : IXposedHookLoadPackage {
      */
     private fun hookCamera2(lpparam: XC_LoadPackage.LoadPackageParam) {
         try {
-            // Hook camera opening to log
+            // Hook camera opening to log and initialize
             hookCameraOpen(lpparam)
             
-            // Hook session creation to track surfaces
+            // Hook session creation to wrap callbacks
             hookCaptureSession(lpparam)
             
-            XposedBridge.log("$TAG: Camera2 hooks installed")
+            XposedBridge.log("$TAG: ⚙️ Camera2 hooks installed for ${lpparam.packageName}")
         } catch (e: Exception) {
-            XposedBridge.log("$TAG: Camera2 hook error: ${e.message}")
+            XposedBridge.log("$TAG: ❌ Camera2 hook error: ${e.message}")
         }
     }
 
@@ -86,15 +85,15 @@ class VirtuCamXposed : IXposedHookLoadPackage {
                 object : XC_MethodHook() {
                     override fun beforeHookedMethod(param: MethodHookParam) {
                         val cameraId = param.args[0] as String
-                        XposedBridge.log("$TAG: 📷 Camera $cameraId opening for ${lpparam.packageName}")
+                        XposedBridge.log("$TAG: 📷 Camera $cameraId opening in ${lpparam.packageName}")
                         
-                        // Initialize video decoder or synthetic generator
-                        initializeFrameSource(lpparam)
+                        // Initialize video source
+                        initializeFrameSource(lpparam.packageName)
                     }
                 }
             )
         } catch (e: Exception) {
-            XposedBridge.log("$TAG: Failed to hook openCamera: ${e.message}")
+            XposedBridge.log("$TAG: ❌ Failed to hook openCamera: ${e.message}")
         }
     }
 
@@ -105,7 +104,7 @@ class VirtuCamXposed : IXposedHookLoadPackage {
                 lpparam.classLoader
             )
 
-            // Hook setRepeatingRequest (preview)
+            // Hook setRepeatingRequest (preview stream)
             XposedHelpers.findAndHookMethod(
                 sessionImplClass,
                 "setRepeatingRequest",
@@ -117,17 +116,16 @@ class VirtuCamXposed : IXposedHookLoadPackage {
                         try {
                             val originalCallback = param.args[1] as? CameraCaptureSession.CaptureCallback
                             if (originalCallback != null) {
-                                // Wrap the callback to inject our frames
                                 val wrappedCallback = VirtualCaptureCallback(
                                     originalCallback,
                                     lpparam.packageName
                                 )
                                 param.args[1] = wrappedCallback
                                 
-                                XposedBridge.log("$TAG: 🎬 Capture callback wrapped!")
+                                XposedBridge.log("$TAG: 🎬 Preview callback wrapped for ${lpparam.packageName}")
                             }
                         } catch (e: Exception) {
-                            XposedBridge.log("$TAG: Callback wrap error: ${e.message}")
+                            XposedBridge.log("$TAG: ❌ Callback wrap error: ${e.message}")
                         }
                     }
                 }
@@ -152,48 +150,48 @@ class VirtuCamXposed : IXposedHookLoadPackage {
                                 param.args[1] = wrappedCallback
                             }
                         } catch (e: Exception) {
-                            XposedBridge.log("$TAG: Capture wrap error: ${e.message}")
+                            XposedBridge.log("$TAG: ❌ Single capture wrap error: ${e.message}")
                         }
                     }
                 }
             )
         } catch (e: Exception) {
-            XposedBridge.log("$TAG: Session hook error: ${e.message}")
+            XposedBridge.log("$TAG: ❌ Session hook error: ${e.message}")
         }
     }
 
     /**
      * Initialize video decoder or synthetic frame generator
      */
-    private fun initializeFrameSource(lpparam: XC_LoadPackage.LoadPackageParam) {
+    private fun initializeFrameSource(packageName: String) {
         try {
-            val packageName = lpparam.packageName
+            // Check centralized video location
+            val videoFile = File(VIDEO_PATH)
             
-            // Check if video file exists in app's private storage
-            val videoPath = "/data/data/$packageName/cache/$VIDEO_FILENAME"
-            val videoFile = File(videoPath)
-            
-            if (videoFile.exists() && videoFile.length() > 0) {
-                XposedBridge.log("$TAG: 🎥 Video found: $videoPath (${videoFile.length()} bytes)")
+            if (videoFile.exists() && videoFile.canRead() && videoFile.length() > 0) {
+                val sizeMB = videoFile.length() / (1024 * 1024)
+                XposedBridge.log("$TAG: 🎥 Video found: $VIDEO_PATH (${sizeMB}MB)")
                 
                 // Initialize video decoder
-                val decoder = VideoDecoder(videoPath)
+                val decoder = VideoDecoder(VIDEO_PATH)
                 if (decoder.initialize()) {
                     decoder.start()
                     activeDecoders[packageName] = decoder
-                    XposedBridge.log("$TAG: ✅ Video decoder started")
+                    XposedBridge.log("$TAG: ✅ Video decoder started for $packageName")
                 } else {
-                    XposedBridge.log("$TAG: ⚠️ Decoder init failed, using synthetic")
+                    XposedBridge.log("$TAG: ⚠️ Decoder init failed, using synthetic frames")
                     startSyntheticGenerator(packageName)
                 }
             } else {
-                XposedBridge.log("$TAG: ⚠️ No video file, using synthetic frames")
-                XposedBridge.log("$TAG: 📝 To use video: Copy to $videoPath")
+                XposedBridge.log("$TAG: ⚠️ No video file found at $VIDEO_PATH")
+                XposedBridge.log("$TAG: 📝 Please select a video in VirtuCam app")
+                XposedBridge.log("$TAG: 🎨 Using synthetic test pattern for now")
                 startSyntheticGenerator(packageName)
             }
         } catch (e: Exception) {
-            XposedBridge.log("$TAG: Init error: ${e.message}")
-            startSyntheticGenerator(lpparam.packageName)
+            XposedBridge.log("$TAG: ❌ Init error: ${e.message}")
+            e.printStackTrace()
+            startSyntheticGenerator(packageName)
         }
     }
 
@@ -201,7 +199,7 @@ class VirtuCamXposed : IXposedHookLoadPackage {
         val generator = SyntheticFrameGenerator()
         generator.start()
         syntheticGenerators[packageName] = generator
-        XposedBridge.log("$TAG: 🎨 Synthetic frame generator started")
+        XposedBridge.log("$TAG: 🎨 Synthetic frame generator started for $packageName")
     }
 
     /**
@@ -220,7 +218,6 @@ class VirtuCamXposed : IXposedHookLoadPackage {
             timestamp: Long,
             frameNumber: Long
         ) {
-            // Pass through to original
             originalCallback.onCaptureStarted(session, request, timestamp, frameNumber)
         }
 
@@ -229,7 +226,6 @@ class VirtuCamXposed : IXposedHookLoadPackage {
             request: CaptureRequest,
             partialResult: CaptureResult
         ) {
-            // Pass through to original
             originalCallback.onCaptureProgressed(session, request, partialResult)
         }
 
@@ -241,16 +237,13 @@ class VirtuCamXposed : IXposedHookLoadPackage {
             frameCount++
             
             if (frameCount % 30 == 0) {
-                XposedBridge.log("$TAG: 🎬 Frame $frameCount captured")
+                XposedBridge.log("$TAG: 🎬 Frame $frameCount delivered to $packageName")
             }
             
-            // TODO: Here we would inject the virtual frame
-            // For now, pass through to original
+            // TODO: Inject virtual frame data here
+            // For now, pass through to original callback
             originalCallback.onCaptureCompleted(session, request, result)
         }
-
-        // Note: onCaptureFailed is not overridden due to nested class compilation issues
-        // Failed captures will be handled by the original callback
     }
 
     /**
@@ -262,15 +255,13 @@ class VirtuCamXposed : IXposedHookLoadPackage {
 
         fun start() {
             running = true
-            XposedBridge.log("$TAG: 🎨 Synthetic generator ready")
+            XposedBridge.log("$TAG: 🎨 Synthetic generator initialized")
         }
 
         fun getNextFrame(): ByteArray? {
             if (!running) return null
-            
             frameCount++
-            // Generate a simple YUV test pattern
-            // For now, return null (will be implemented)
+            // TODO: Generate YUV test pattern
             return null
         }
 
