@@ -252,9 +252,18 @@ class VirtuCamXposed : IXposedHookLoadPackage {
         override fun onCaptureFailed(
             session: CameraCaptureSession,
             request: CaptureRequest,
-            failure: CameraCaptureSession.CaptureFailure
+            failure: Any  // Using Any to avoid compile-time errors with nested class
         ) {
-            originalCallback.onCaptureFailed(session, request, failure)
+            // Cast to proper type at runtime
+            try {
+                originalCallback.onCaptureFailed(
+                    session, 
+                    request, 
+                    failure as CameraCaptureSession.CaptureFailure
+                )
+            } catch (e: Exception) {
+                XposedBridge.log("$TAG: onCaptureFailed error: ${e.message}")
+            }
         }
     }
 
