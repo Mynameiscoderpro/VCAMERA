@@ -97,6 +97,12 @@ dependencies {
     implementation 'com.github.bumptech.glide:glide:4.16.0'
     kapt 'com.github.bumptech.glide:compiler:4.16.0'
 
+    // ExoPlayer for video decoding
+    implementation 'androidx.media3:media3-exoplayer:1.2.0'
+    implementation 'androidx.media3:media3-exoplayer-dash:1.2.0'
+    implementation 'androidx.media3:media3-ui:1.2.0'
+    implementation 'androidx.media3:media3-common:1.2.0'
+
     // Xposed API - will be provided by MochiCloner at runtime
     // Using provided files in libs folder
     compileOnly files('libs/XposedBridgeApi-82.jar')
